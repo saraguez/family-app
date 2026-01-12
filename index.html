@@ -5,39 +5,28 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>המבצע המשפחתי</title>
     
-    <!-- App Icon (Trophy) -->
     <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🏆</text></svg>">
     <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🏆</text></svg>">
 
-    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-
-    <!-- React & ReactDOM -->
     <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-    
-    <!-- Babel (to compile JSX) -->
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 
-    <!-- Firebase SDKs (Compat version for HTML usage) -->
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
 
     <style>
-        @keyframes shimmer {
-            0% { transform: translateX(-150%); }
-            50% { transform: translateX(150%); }
-            100% { transform: translateX(150%); }
-        }
+        @keyframes shimmer { 0% { transform: translateX(-150%); } 50% { transform: translateX(150%); } 100% { transform: translateX(150%); } }
         @keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
         @keyframes slide-up { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
         @keyframes scale-up { from { opacity: 0; transform: scale(0.9); } to { opacity: 1; transform: scale(1); } }
         .animate-fade-in { animation: fade-in 0.2s ease-out; }
         .animate-slide-up { animation: slide-up 0.3s cubic-bezier(0.16, 1, 0.3, 1); }
         .animate-scale-up { animation: scale-up 0.2s cubic-bezier(0.16, 1, 0.3, 1); }
-        /* Hide scrollbar for clean UI */
         ::-webkit-scrollbar { width: 0px; background: transparent; }
+        body { -webkit-tap-highlight-color: transparent; }
     </style>
 </head>
 <body class="bg-slate-50 text-slate-800 font-sans select-none overflow-x-hidden">
@@ -47,27 +36,28 @@
         const { useState, useEffect, useRef } = React;
 
         // --- FIREBASE CONFIGURATION ---
-        // 🔴 PASTE YOUR KEYS HERE 🔴
+        // 🔴 PASTE YOUR FIREBASE KEYS HERE 🔴
         const firebaseConfig = {
-  apiKey: "AIzaSyCET42vMcj1uC0nMsqsWy2xd-yv1WC7e68",
-  authDomain: "family-tasks-ee68f.firebaseapp.com",
-  projectId: "family-tasks-ee68f",
-  storageBucket: "family-tasks-ee68f.firebasestorage.app",
-  messagingSenderId: "579816138584",
-  appId: "1:579816138584:web:1b2a3cbf4c5fd00a45e72d"
-};
+            apiKey: "YOUR_API_KEY",
+            authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
+            projectId: "YOUR_PROJECT_ID",
+            storageBucket: "YOUR_PROJECT_ID.appspot.com",
+            messagingSenderId: "YOUR_SENDER_ID",
+            appId: "YOUR_APP_ID"
+        };
 
-
-        // Initialize Firebase
         if (!firebase.apps.length) {
-            firebase.initializeApp(firebaseConfig);
+            try {
+                firebase.initializeApp(firebaseConfig);
+            } catch(e) {
+                console.error("Firebase init error. Did you paste the keys?", e);
+            }
         }
         const auth = firebase.auth();
         const db = firebase.firestore();
-        const appId = "default-app-id"; // You can change this identifier if you want multiple families in one DB
+        const appId = "default-app-id";
 
-        // --- ICONS (SVG Helpers) ---
-        // We manually define icons since we can't import 'lucide-react' directly in a simple HTML file
+        // --- ICONS ---
         const IconBase = ({ children, className, ...props }) => (
             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className} {...props}>{children}</svg>
         );
@@ -179,84 +169,9 @@
             } catch (e) { console.error("Audio error", e); }
         };
 
-        // --- COMPONENTS ---
-
-        function Confetti({ density = 150 }) {
-            const canvasRef = useRef(null);
-            useEffect(() => {
-                const canvas = canvasRef.current;
-                if (!canvas) return;
-                const ctx = canvas.getContext('2d');
-                const updateSize = () => { canvas.width = window.innerWidth; canvas.height = window.innerHeight; };
-                updateSize();
-                window.addEventListener('resize', updateSize);
-                const colors = ['#FCD34D', '#F87171', '#60A5FA', '#34D399', '#A78BFA', '#F472B6'];
-                const particles = Array.from({ length: density }).map(() => ({
-                    x: Math.random() * canvas.width, y: -Math.random() * canvas.height, color: colors[Math.floor(Math.random() * colors.length)],
-                    size: Math.random() * 8 + 4, weight: Math.random() * 3 + 2, angle: Math.random() * 360, spin: Math.random() * 5 - 2.5, oscillationSpeed: Math.random() * 0.05 + 0.02
-                }));
-                let animationId;
-                function animate() {
-                    ctx.clearRect(0, 0, canvas.width, canvas.height);
-                    particles.forEach(p => {
-                        p.y += p.weight; p.angle += p.spin; p.x += Math.sin(p.angle * p.oscillationSpeed) * 2;
-                        if (p.y > canvas.height) { p.y = -10; p.x = Math.random() * canvas.width; }
-                        ctx.save(); ctx.translate(p.x, p.y); ctx.rotate(p.angle * Math.PI / 180); ctx.fillStyle = p.color;
-                        ctx.fillRect(-p.size / 2, -p.size / 2, p.size, p.size); ctx.restore();
-                    });
-                    animationId = requestAnimationFrame(animate);
-                }
-                animate();
-                return () => { cancelAnimationFrame(animationId); window.removeEventListener('resize', updateSize); };
-            }, [density]);
-            return <canvas ref={canvasRef} className="fixed inset-0 pointer-events-none z-[100]" />;
-        }
-
-        const BonusModal = ({ onClose, onConfirm }) => {
-            const [amount, setAmount] = useState(1);
-            return (
-                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm animate-fade-in">
-                    <div className="bg-white w-full max-w-md rounded-3xl shadow-2xl p-6 text-center animate-scale-up">
-                        <div className="mx-auto w-16 h-16 bg-gradient-to-br from-orange-400 to-red-500 rounded-full flex items-center justify-center mb-4 shadow-lg"><Icons.Sparkles className="w-8 h-8 text-white" /></div>
-                        <h3 className="text-2xl font-bold text-slate-800 mb-2">הוספת בונוס</h3>
-                        <p className="text-slate-600 mb-6">כמה נקודות להוסיף למאמץ המשפחתי?</p>
-                        <div className="flex items-center justify-center gap-4 mb-8">
-                            <button onClick={() => setAmount(Math.max(1, amount - 1))} className="w-12 h-12 rounded-full bg-slate-100 flex items-center justify-center text-slate-600 font-bold hover:bg-slate-200 transition-colors shadow-sm"><Icons.Minus className="w-6 h-6" /></button>
-                            <div className="text-6xl font-black text-transparent bg-clip-text bg-gradient-to-r from-orange-500 to-red-600 w-24 tabular-nums">{amount}</div>
-                            <button onClick={() => setAmount(Math.min(10, amount + 1))} className="w-12 h-12 rounded-full bg-slate-100 flex items-center justify-center text-slate-600 font-bold hover:bg-slate-200 transition-colors shadow-sm"><Icons.Plus className="w-6 h-6" /></button>
-                        </div>
-                        <input type="range" min="1" max="10" value={amount} onChange={(e) => setAmount(parseInt(e.target.value))} className="w-full mb-8 accent-orange-500 h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer" />
-                        <div className="flex gap-4 justify-center">
-                            <button onClick={onClose} className="px-6 py-3 rounded-xl border-2 border-slate-200 text-slate-600 font-bold hover:bg-slate-50 transition-colors">ביטול</button>
-                            <button onClick={() => onConfirm(amount)} className="px-8 py-3 rounded-xl bg-gradient-to-r from-orange-400 to-red-500 text-white font-bold shadow-lg hover:shadow-xl hover:scale-105 transition-all">הוסף {amount} נקודות!</button>
-                        </div>
-                    </div>
-                </div>
-            );
-        };
-
-        const PinModal = ({ onClose, onSuccess, correctPin }) => {
-            const [pin, setPin] = useState("");
-            const [error, setError] = useState(false);
-            const handleNumber = (num) => { if (pin.length < 4) { setPin(prev => prev + num); setError(false); } };
-            const handleBackspace = () => setPin(prev => prev.slice(0, -1));
-            const handleSubmit = () => { if (pin === correctPin) { onSuccess(); } else { setError(true); setPin(""); } };
-            return (
-                <div className="fixed inset-0 z-[120] flex items-center justify-center p-4 bg-black/50 backdrop-blur-md animate-fade-in">
-                    <div className="bg-white w-full max-w-sm rounded-3xl shadow-2xl p-6 text-center">
-                        <div className="mb-6"><div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4"><Icons.Lock className="w-8 h-8 text-slate-500" /></div><h3 className="text-xl font-bold text-slate-800">קוד הורים</h3><p className="text-slate-500 text-sm">אנא הקש קוד גישה לביצוע פעולה זו</p></div>
-                        <div className="flex justify-center gap-4 mb-8">{[0, 1, 2, 3].map(i => (<div key={i} className={`w-4 h-4 rounded-full transition-all ${i < pin.length ? 'bg-blue-500 scale-110' : 'bg-slate-200'}`} />))}</div>
-                        {error && <p className="text-red-500 text-sm font-bold mb-4 animate-pulse">קוד שגוי, נסה שנית</p>}
-                        <div className="grid grid-cols-3 gap-3 mb-6">{[1, 2, 3, 4, 5, 6, 7, 8, 9].map(n => (<button key={n} onClick={() => handleNumber(n)} className="h-16 rounded-2xl bg-slate-50 hover:bg-slate-100 font-bold text-2xl text-slate-700 transition-colors shadow-sm">{n}</button>))}<div></div><button onClick={() => handleNumber(0)} className="h-16 rounded-2xl bg-slate-50 hover:bg-slate-100 font-bold text-2xl text-slate-700 transition-colors shadow-sm">0</button><button onClick={handleBackspace} className="h-16 rounded-2xl hover:bg-red-50 flex items-center justify-center text-slate-400 hover:text-red-500 transition-colors"><Icons.X className="w-6 h-6" /></button></div>
-                        <div className="flex gap-2"><button onClick={onClose} className="flex-1 py-3 rounded-xl bg-slate-100 font-bold text-slate-600 hover:bg-slate-200">ביטול</button><button onClick={handleSubmit} className="flex-1 py-3 rounded-xl bg-blue-600 font-bold text-white hover:bg-blue-700 shadow-md">אישור</button></div>
-                    </div>
-                </div>
-            );
-        };
-
         const TaskItem = ({ task, childId, isDone, onToggleTask, onDeleteTask }) => (
             <div className="relative group mb-3">
-                <button onClick={() => onToggleTask(childId, task.id, task.text)} className={`w-full flex items-center justify-between p-5 rounded-2xl border-2 transition-all duration-200 ${isDone ? 'bg-green-50 border-green-200 shadow-none' : 'bg-white border-slate-100 shadow-md hover:border-blue-200'}`}>
+                <button type="button" onClick={() => onToggleTask(childId, task.id, task.text)} className={`w-full flex items-center justify-between p-5 rounded-2xl border-2 transition-all duration-200 cursor-pointer select-none active:scale-[0.98] ${isDone ? 'bg-green-50 border-green-200 shadow-none' : 'bg-white border-slate-100 shadow-md hover:border-blue-200'}`} style={{ WebkitTapHighlightColor: 'transparent' }}>
                     <div className="flex items-center gap-3">
                         {task.type === 'one-time' && <Icons.Calendar className="w-4 h-4 text-blue-400" />}
                         {task.type === 'daily' && <Icons.Repeat className="w-4 h-4 text-purple-400" />}
@@ -269,7 +184,7 @@
                         {isDone && <Icons.Check className="w-6 h-6 text-white" />}
                     </div>
                 </button>
-                <button onClick={(e) => { e.stopPropagation(); onDeleteTask(childId, task.id); }} className="absolute -left-2 top-1/2 -translate-y-1/2 -translate-x-full p-2 bg-red-100 text-red-500 rounded-full opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-200" title="מחק משימה"><Icons.Trash2 className="w-5 h-5" /></button>
+                <button type="button" onClick={(e) => { e.stopPropagation(); onDeleteTask(childId, task.id); }} className="absolute -left-2 top-1/2 -translate-y-1/2 -translate-x-full p-2 bg-red-100 text-red-500 rounded-full opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-200 z-10" title="מחק משימה"><Icons.Trash2 className="w-5 h-5" /></button>
             </div>
         );
 
@@ -290,8 +205,8 @@
             const eveningTasks = tasks.filter(t => t.type !== 'morning');
 
             return (
-                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm animate-fade-in">
-                    <div className="bg-white w-full max-w-lg rounded-3xl shadow-2xl overflow-hidden animate-slide-up flex flex-col max-h-[90vh]" onClick={(e) => e.stopPropagation()}>
+                <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm animate-fade-in" onClick={onClose}>
+                    <div className="bg-white w-full max-w-lg rounded-3xl shadow-2xl overflow-hidden animate-slide-up flex flex-col max-h-[90vh] z-[70] relative" onClick={(e) => e.stopPropagation()}>
                         <div className={`${theme.iconBg} p-6 flex items-center justify-between flex-shrink-0`}>
                             <div className="flex items-center gap-4">
                                 <div className="bg-white/50 p-1 rounded-full flex items-center justify-center w-16 h-16 overflow-hidden border-2 border-white/50">
@@ -429,6 +344,48 @@
             );
         };
 
+        const BonusModal = ({ onClose, onConfirm }) => {
+            const [amount, setAmount] = useState(1);
+            return (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm animate-fade-in">
+                    <div className="bg-white w-full max-w-md rounded-3xl shadow-2xl p-6 text-center animate-scale-up">
+                        <div className="mx-auto w-16 h-16 bg-gradient-to-br from-orange-400 to-red-500 rounded-full flex items-center justify-center mb-4 shadow-lg"><Icons.Sparkles className="w-8 h-8 text-white" /></div>
+                        <h3 className="text-2xl font-bold text-slate-800 mb-2">הוספת בונוס</h3>
+                        <p className="text-slate-600 mb-6">כמה נקודות להוסיף למאמץ המשפחתי?</p>
+                        <div className="flex items-center justify-center gap-4 mb-8">
+                            <button onClick={() => setAmount(Math.max(1, amount - 1))} className="w-12 h-12 rounded-full bg-slate-100 flex items-center justify-center text-slate-600 font-bold hover:bg-slate-200 transition-colors shadow-sm"><Icons.Minus className="w-6 h-6" /></button>
+                            <div className="text-6xl font-black text-transparent bg-clip-text bg-gradient-to-r from-orange-500 to-red-600 w-24 tabular-nums">{amount}</div>
+                            <button onClick={() => setAmount(Math.min(10, amount + 1))} className="w-12 h-12 rounded-full bg-slate-100 flex items-center justify-center text-slate-600 font-bold hover:bg-slate-200 transition-colors shadow-sm"><Icons.Plus className="w-6 h-6" /></button>
+                        </div>
+                        <input type="range" min="1" max="10" value={amount} onChange={(e) => setAmount(parseInt(e.target.value))} className="w-full mb-8 accent-orange-500 h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer" />
+                        <div className="flex gap-4 justify-center">
+                            <button onClick={onClose} className="px-6 py-3 rounded-xl border-2 border-slate-200 text-slate-600 font-bold hover:bg-slate-50 transition-colors">ביטול</button>
+                            <button onClick={() => onConfirm(amount)} className="px-8 py-3 rounded-xl bg-gradient-to-r from-orange-400 to-red-500 text-white font-bold shadow-lg hover:shadow-xl hover:scale-105 transition-all">הוסף {amount} נקודות!</button>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        const PinModal = ({ onClose, onSuccess, correctPin }) => {
+            const [pin, setPin] = useState("");
+            const [error, setError] = useState(false);
+            const handleNumber = (num) => { if (pin.length < 4) { setPin(prev => prev + num); setError(false); } };
+            const handleBackspace = () => setPin(prev => prev.slice(0, -1));
+            const handleSubmit = () => { if (pin === correctPin) { onSuccess(); } else { setError(true); setPin(""); } };
+            return (
+                <div className="fixed inset-0 z-[120] flex items-center justify-center p-4 bg-black/50 backdrop-blur-md animate-fade-in">
+                    <div className="bg-white w-full max-w-sm rounded-3xl shadow-2xl p-6 text-center">
+                        <div className="mb-6"><div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4"><Icons.Lock className="w-8 h-8 text-slate-500" /></div><h3 className="text-xl font-bold text-slate-800">קוד הורים</h3><p className="text-slate-500 text-sm">אנא הקש קוד גישה לביצוע פעולה זו</p></div>
+                        <div className="flex justify-center gap-4 mb-8">{[0, 1, 2, 3].map(i => (<div key={i} className={`w-4 h-4 rounded-full transition-all ${i < pin.length ? 'bg-blue-500 scale-110' : 'bg-slate-200'}`} />))}</div>
+                        {error && <p className="text-red-500 text-sm font-bold mb-4 animate-pulse">קוד שגוי, נסה שנית</p>}
+                        <div className="grid grid-cols-3 gap-3 mb-6">{[1, 2, 3, 4, 5, 6, 7, 8, 9].map(n => (<button key={n} onClick={() => handleNumber(n)} className="h-16 rounded-2xl bg-slate-50 hover:bg-slate-100 font-bold text-2xl text-slate-700 transition-colors shadow-sm">{n}</button>))}<div></div><button onClick={() => handleNumber(0)} className="h-16 rounded-2xl bg-slate-50 hover:bg-slate-100 font-bold text-2xl text-slate-700 transition-colors shadow-sm">0</button><button onClick={handleBackspace} className="h-16 rounded-2xl hover:bg-red-50 flex items-center justify-center text-slate-400 hover:text-red-500 transition-colors"><Icons.X className="w-6 h-6" /></button></div>
+                        <div className="flex gap-2"><button onClick={onClose} className="flex-1 py-3 rounded-xl bg-slate-100 font-bold text-slate-600 hover:bg-slate-200">ביטול</button><button onClick={handleSubmit} className="flex-1 py-3 rounded-xl bg-blue-600 font-bold text-white hover:bg-blue-700 shadow-md">אישור</button></div>
+                    </div>
+                </div>
+            );
+        };
+
         const App = () => {
             const [user, setUser] = useState(null);
             const [points, setPoints] = useState(0);
@@ -537,7 +494,7 @@
             };
 
             const handleTaskToggle = async (childId, taskId, taskText) => {
-                if (!user) return;
+                if (!user) { alert("מתחבר למערכת... אנא נסה שנית בעוד רגע."); return; }
                 const taskKey = `${getTodayKey()}_${childId}_${taskId}`;
                 const isAlreadyDone = completedTasks[taskKey];
                 const docRef = db.collection('artifacts').doc(appId).collection('public').doc('data').collection('family_project_v1').doc('status');
@@ -664,7 +621,7 @@
             );
         };
 
-        ReactDOM.render(<App />, document.getElementById('root'));
+        ReactDOM.createRoot(document.getElementById('root')).render(<App />);
     </script>
 </body>
 </html>
