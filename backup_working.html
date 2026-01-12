@@ -4,20 +4,13 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Family Task App</title>
-    
     <script src="https://cdn.tailwindcss.com"></script>
     
     <style>
-        body { background-color: #f8fafc; font-family: sans-serif; }
-        #root:empty::before {
-            content: 'טוען את האפליקציה... (אנא המתן)';
-            display: block; text-align: center; margin-top: 50px; font-size: 24px; color: #64748b;
-        }
-        #crash-screen {
-            display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0;
-            background: #fee2e2; color: #991b1b; padding: 20px; z-index: 9999;
-            overflow: auto; direction: ltr; text-align: left;
-        }
+        body { background-color: #f8fafc; font-family: sans-serif; user-select: none; -webkit-user-select: none; }
+        #root:empty::before { content: 'טוען את האפליקציה...'; display: block; text-align: center; margin-top: 50px; font-size: 24px; color: #64748b; }
+        #crash-screen { display: none; position: fixed; inset: 0; background: #fee2e2; color: #991b1b; padding: 20px; z-index: 9999; overflow: auto; direction: ltr; text-align: left; }
+        .tap-highlight-transparent { -webkit-tap-highlight-color: transparent; }
     </style>
 
     <script type="importmap">
@@ -32,31 +25,22 @@
       }
     }
     </script>
-
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 </head>
 <body>
     <div id="crash-screen"></div>
     <div id="root"></div>
-
-    <script>
-        window.onerror = function(msg, url, line, col, error) {
-            document.getElementById('crash-screen').style.display = 'block';
-            document.getElementById('crash-screen').innerHTML += `<h3>❌ Error Detected:</h3><pre>${msg}\nLine: ${line}</pre><br>Try refreshing the page.`;
-        };
-    </script>
+    <script>window.onerror=function(m,u,l){document.getElementById('crash-screen').style.display='block';document.getElementById('crash-screen').innerHTML+=`<h3>❌ Error:</h3><pre>${m}\nLine: ${l}</pre>`;}</script>
 
     <script type="text/babel" data-type="module">
         import React, { useState, useEffect, useRef } from 'react';
         import { createRoot } from 'react-dom/client';
         import { initializeApp } from 'firebase/app';
         import { getAuth, signInAnonymously, onAuthStateChanged } from 'firebase/auth';
-        import { getFirestore, collection, doc, onSnapshot, setDoc, updateDoc, increment } from 'firebase/firestore';
-        
-        // SAFE ICON IMPORT
+        import { getFirestore, doc, onSnapshot, setDoc, updateDoc, increment } from 'firebase/firestore';
         import * as LucideIcons from 'lucide-react';
 
-        // --- CONFIGURATION ---
+        // --- KEYS ---
         const firebaseConfig = {
             apiKey: "AIzaSyCET42vMcj1uC0nMsqsWy2xd-yv1WC7e68",
             authDomain: "family-tasks-ee68f.firebaseapp.com",
@@ -69,23 +53,55 @@
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
         const db = getFirestore(app);
-        const appId = 'family-app-main'; 
+        const appId = 'family-app-main';
+        const PARENT_PIN = "0613";
 
-        // Icon Helper
+        // --- SOUND ENGINE (Synthesizer) ---
+        const playSound = (type) => {
+            const AudioContext = window.AudioContext || window.webkitAudioContext;
+            if (!AudioContext) return;
+            const ctx = new AudioContext();
+            
+            if (type === 'ding') {
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+                osc.connect(gain); gain.connect(ctx.destination);
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(523.25, ctx.currentTime); // C5
+                osc.frequency.exponentialRampToValueAtTime(1046.5, ctx.currentTime + 0.1); // C6
+                gain.gain.setValueAtTime(0.3, ctx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.5);
+                osc.start(); osc.stop(ctx.currentTime + 0.5);
+            } else if (type === 'win') {
+                const now = ctx.currentTime;
+                [523.25, 659.25, 783.99, 1046.50].forEach((freq, i) => {
+                    const osc = ctx.createOscillator();
+                    const gain = ctx.createGain();
+                    osc.connect(gain); gain.connect(ctx.destination);
+                    osc.type = 'triangle';
+                    osc.frequency.value = freq;
+                    gain.gain.setValueAtTime(0.2, now + i*0.15);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + i*0.15 + 0.4);
+                    osc.start(now + i*0.15); osc.stop(now + i*0.15 + 0.4);
+                });
+            }
+        };
+
+        // --- ICONS & HELPERS ---
         const getIcon = (name) => {
-            const componentName = name.charAt(0).toUpperCase() + name.slice(1);
-            return LucideIcons[componentName] || LucideIcons['Smile'];
+            const c = name.charAt(0).toUpperCase() + name.slice(1);
+            return LucideIcons[c] || LucideIcons['Smile'];
         };
 
         const THEMES = [
-            { id: 'pink', name: 'ורוד', classes: 'bg-pink-100 text-pink-700 border-pink-300', iconBg: 'bg-pink-200', iconText: 'text-pink-600' },
-            { id: 'blue', name: 'כחול', classes: 'bg-blue-100 text-blue-700 border-blue-300', iconBg: 'bg-blue-200', iconText: 'text-blue-600' },
-            { id: 'green', name: 'ירוק', classes: 'bg-green-100 text-green-700 border-green-300', iconBg: 'bg-green-200', iconText: 'text-green-600' },
-            { id: 'purple', name: 'סגול', classes: 'bg-purple-100 text-purple-700 border-purple-300', iconBg: 'bg-purple-200', iconText: 'text-purple-600' },
-            { id: 'yellow', name: 'צהוב', classes: 'bg-yellow-100 text-yellow-700 border-yellow-300', iconBg: 'bg-yellow-200', iconText: 'text-yellow-600' },
-            { id: 'orange', name: 'כתום', classes: 'bg-orange-100 text-orange-700 border-orange-300', iconBg: 'bg-orange-200', iconText: 'text-orange-600' },
-            { id: 'teal', name: 'טורקיז', classes: 'bg-teal-100 text-teal-700 border-teal-300', iconBg: 'bg-teal-200', iconText: 'text-teal-600' },
-            { id: 'red', name: 'אדום', classes: 'bg-red-100 text-red-700 border-red-300', iconBg: 'bg-red-200', iconText: 'text-red-600' },
+            { id: 'pink', classes: 'bg-pink-100 text-pink-700 border-pink-300', iconBg: 'bg-pink-200', iconText: 'text-pink-600' },
+            { id: 'blue', classes: 'bg-blue-100 text-blue-700 border-blue-300', iconBg: 'bg-blue-200', iconText: 'text-blue-600' },
+            { id: 'green', classes: 'bg-green-100 text-green-700 border-green-300', iconBg: 'bg-green-200', iconText: 'text-green-600' },
+            { id: 'purple', classes: 'bg-purple-100 text-purple-700 border-purple-300', iconBg: 'bg-purple-200', iconText: 'text-purple-600' },
+            { id: 'yellow', classes: 'bg-yellow-100 text-yellow-700 border-yellow-300', iconBg: 'bg-yellow-200', iconText: 'text-yellow-600' },
+            { id: 'orange', classes: 'bg-orange-100 text-orange-700 border-orange-300', iconBg: 'bg-orange-200', iconText: 'text-orange-600' },
+            { id: 'teal', classes: 'bg-teal-100 text-teal-700 border-teal-300', iconBg: 'bg-teal-200', iconText: 'text-teal-600' },
+            { id: 'red', classes: 'bg-red-100 text-red-700 border-red-300', iconBg: 'bg-red-200', iconText: 'text-red-600' },
         ];
 
         const CHILDREN_DEFAULTS = [
@@ -98,46 +114,39 @@
 
         const FAMILY_DEFAULT = { defaultThemeId: 'yellow', defaultIconKey: 'trophy', defaultTitle: 'המבצע המשפחתי', defaultTarget: 100 };
 
-        // Helper: Number to Hebrew
         const toHebrewNumeral = (n) => {
             if (!n || n < 1 || n > 31) return n;
             const letters = ['', 'א׳', 'ב׳', 'ג׳', 'ד׳', 'ה׳', 'ו׳', 'ז׳', 'ח׳', 'ט׳', 'י׳', 'י״א', 'י״ב', 'י״ג', 'י״ד', 'ט״ו', 'ט״ז', 'י״ז', 'י״ח', 'י״ט', 'כ׳', 'כ״א', 'כ״ב', 'כ״ג', 'כ״ד', 'כ״ה', 'כ״ו', 'כ״ז', 'כ״ח', 'כ״ט', 'ל׳', 'ל״א'];
             return letters[n] || n;
         };
 
-        // Helper: Resize Image
-        const resizeImage = (file) => {
-            return new Promise((resolve) => {
-                const reader = new FileReader();
-                reader.onload = (event) => {
-                    const img = new Image();
-                    img.onload = () => {
-                        const canvas = document.createElement('canvas');
-                        const MAX_WIDTH = 300; const MAX_HEIGHT = 300;
-                        let width = img.width; let height = img.height;
-                        if (width > height) { if (width > MAX_WIDTH) { height *= MAX_WIDTH / width; width = MAX_WIDTH; } } 
-                        else { if (height > MAX_HEIGHT) { width *= MAX_HEIGHT / height; height = MAX_HEIGHT; } }
-                        canvas.width = width; canvas.height = height;
-                        const ctx = canvas.getContext('2d');
-                        ctx.drawImage(img, 0, 0, width, height);
-                        resolve(canvas.toDataURL('image/jpeg', 0.7));
-                    };
-                    img.src = event.target.result;
+        const resizeImage = (file) => new Promise((resolve) => {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const img = new Image();
+                img.onload = () => {
+                    const canvas = document.createElement('canvas');
+                    const MAX_WIDTH = 300, MAX_HEIGHT = 300;
+                    let width = img.width, height = img.height;
+                    if (width > height) { if (width > MAX_WIDTH) { height *= MAX_WIDTH / width; width = MAX_WIDTH; } } 
+                    else { if (height > MAX_HEIGHT) { width *= MAX_HEIGHT / height; height = MAX_HEIGHT; } }
+                    canvas.width = width; canvas.height = height;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0, width, height);
+                    resolve(canvas.toDataURL('image/jpeg', 0.7));
                 };
-                reader.readAsDataURL(file);
-            });
-        };
+                img.src = e.target.result;
+            };
+            reader.readAsDataURL(file);
+        });
 
-        // Confetti
         function Confetti({ density = 150 }) {
             const canvasRef = useRef(null);
             useEffect(() => {
-                const canvas = canvasRef.current;
-                if (!canvas) return;
+                const canvas = canvasRef.current; if (!canvas) return;
                 const ctx = canvas.getContext('2d');
                 const updateSize = () => { canvas.width = window.innerWidth; canvas.height = window.innerHeight; };
-                updateSize();
-                window.addEventListener('resize', updateSize);
+                updateSize(); window.addEventListener('resize', updateSize);
                 const colors = ['#FCD34D', '#F87171', '#60A5FA', '#34D399', '#A78BFA', '#F472B6'];
                 const particles = Array.from({ length: density }).map(() => ({
                     x: Math.random() * canvas.width, y: -Math.random() * canvas.height,
@@ -156,8 +165,7 @@
                     });
                     animationId = requestAnimationFrame(animate);
                 }
-                animate();
-                return () => { cancelAnimationFrame(animationId); window.removeEventListener('resize', updateSize); };
+                animate(); return () => { cancelAnimationFrame(animationId); window.removeEventListener('resize', updateSize); };
             }, [density]);
             return <canvas ref={canvasRef} className="fixed inset-0 pointer-events-none z-[100]" />;
         }
@@ -166,25 +174,29 @@
         function App() {
             const [user, setUser] = useState(null);
             const [points, setPoints] = useState(0);
-            const [completedTasks, setCompletedTasks] = useState({}); 
-            const [childSettings, setChildSettings] = useState({}); 
-            const [familySettings, setFamilySettings] = useState({}); 
+            const [completedTasks, setCompletedTasks] = useState({});
+            const [childSettings, setChildSettings] = useState({});
+            const [familySettings, setFamilySettings] = useState({});
             const [tasksData, setTasksData] = useState({});
-            
+            const [historyData, setHistoryData] = useState([]);
+
             const [selectedChild, setSelectedChild] = useState(null);
             const [editingChildId, setEditingChildId] = useState(null);
             const [showFamilyEditModal, setShowFamilyEditModal] = useState(false);
             const [showBonusModal, setShowBonusModal] = useState(false);
             const [showWinModal, setShowWinModal] = useState(false);
+            const [showPinModal, setShowPinModal] = useState(false);
+            const [showHistoryModal, setShowHistoryModal] = useState(false);
+            
             const [animationClass, setAnimationClass] = useState('');
             const [showConfetti, setShowConfetti] = useState(false);
             const confettiTimeoutRef = useRef(null);
-            
+            const pinCallback = useRef(null);
+
             const [currentDate, setCurrentDate] = useState('');
             const [hebrewDate, setHebrewDate] = useState('');
             const targetPoints = familySettings.targetPoints || FAMILY_DEFAULT.defaultTarget;
 
-            // Long Press
             const longPressTimer = useRef(null);
             const isLongPress = useRef(false);
             const createLongPressHandlers = (callback, onClick) => ({
@@ -196,40 +208,41 @@
             });
 
             useEffect(() => {
-                const initAuth = async () => { await signInAnonymously(auth); };
-                initAuth();
-                const unsubscribe = onAuthStateChanged(auth, setUser);
+                signInAnonymously(auth);
+                onAuthStateChanged(auth, setUser);
                 const now = new Date();
                 setCurrentDate(now.toLocaleDateString('he-IL', { weekday: 'long', year: 'numeric', month: 'numeric', day: 'numeric' }));
                 try {
-                    const parts = new Intl.DateTimeFormat('he-IL', { calendar: 'hebrew', day: 'numeric', month: 'long', year: 'numeric' }).formatToParts(now);
-                    const day = parts.find(p => p.type === 'day')?.value;
-                    const month = parts.find(p => p.type === 'month')?.value;
-                    const year = parts.find(p => p.type === 'year')?.value;
-                    if (day && month && year) { setHebrewDate(`${toHebrewNumeral(parseInt(day, 10))} ${month} ${year}`); }
-                } catch (e) { console.log("Hebrew cal error", e); }
-                return () => unsubscribe();
+                    const p = new Intl.DateTimeFormat('he-IL', { calendar: 'hebrew', day: 'numeric', month: 'long', year: 'numeric' }).formatToParts(now);
+                    const d = p.find(x => x.type === 'day')?.value; const m = p.find(x => x.type === 'month')?.value; const y = p.find(x => x.type === 'year')?.value;
+                    if (d && m && y) setHebrewDate(`${toHebrewNumeral(parseInt(d))} ${m} ${y}`);
+                } catch(e){}
             }, []);
 
             useEffect(() => {
                 if (!user) return;
                 const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'family_project_v1', 'status');
-                const unsubscribe = onSnapshot(docRef, (docSnap) => {
-                    if (docSnap.exists()) {
-                        const data = docSnap.data();
-                        setPoints(Number(data.points) || 0);
-                        setCompletedTasks(data.completedTasks || {});
-                        setChildSettings(data.childSettings || {});
-                        setFamilySettings(data.familySettings || {});
-                        setTasksData(data.childTasks || {});
+                return onSnapshot(docRef, (snap) => {
+                    if (snap.exists()) {
+                        const d = snap.data();
+                        setPoints(Number(d.points) || 0);
+                        setCompletedTasks(d.completedTasks || {});
+                        setChildSettings(d.childSettings || {});
+                        setFamilySettings(d.familySettings || {});
+                        setTasksData(d.childTasks || {});
+                        setHistoryData(d.history || []);
                     } else {
-                        setDoc(docRef, { points: 0, completedTasks: {}, childSettings: {}, familySettings: {}, childTasks: {} });
+                        setDoc(docRef, { points: 0, completedTasks: {}, childSettings: {}, familySettings: {}, childTasks: {}, history: [] });
                     }
                 });
-                return () => unsubscribe();
             }, [user]);
 
-            useEffect(() => { if (points >= targetPoints && points > 0) setShowWinModal(true); }, [points, targetPoints]);
+            useEffect(() => { 
+                if (points >= targetPoints && points > 0) {
+                    if (!showWinModal) playSound('win'); 
+                    setShowWinModal(true); 
+                } 
+            }, [points, targetPoints]);
 
             const getTodayKey = () => { const d = new Date(); return `${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}`; };
             
@@ -255,17 +268,44 @@
                 confettiTimeoutRef.current = setTimeout(() => setShowConfetti(false), 3000); 
             };
 
-            const handleTaskToggle = async (childId, taskId) => {
+            // --- PROTECTED ACTIONS ---
+            const requestPin = (callback) => {
+                pinCallback.current = callback;
+                setShowPinModal(true);
+            };
+
+            const handleTaskToggle = async (childId, taskId, taskText) => {
                 if (!user) return;
                 const key = `${getTodayKey()}_${childId}_${taskId}`;
                 const isDone = completedTasks[key];
                 const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'family_project_v1', 'status');
-                triggerConfetti();
-                await updateDoc(docRef, { points: increment(isDone ? -1 : 1), [`completedTasks.${key}`]: !isDone });
+                
+                if (!isDone) {
+                    triggerConfetti();
+                    playSound('ding');
+                    const newHistoryItem = { id: Date.now().toString(), childId, task: taskText, timestamp: Date.now(), key, points: 1 };
+                    await updateDoc(docRef, { 
+                        points: increment(1), 
+                        [`completedTasks.${key}`]: true,
+                        history: [newHistoryItem, ...historyData]
+                    });
+                } else {
+                    await updateDoc(docRef, { points: increment(-1), [`completedTasks.${key}`]: false });
+                }
+            };
+
+            const handleDeleteHistoryItem = async (item) => {
+                if (!user) return;
+                const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'family_project_v1', 'status');
+                const updates = {
+                    points: increment(-item.points),
+                    history: historyData.filter(h => h.id !== item.id)
+                };
+                if (item.key) { updates[`completedTasks.${item.key}`] = false; }
+                await updateDoc(docRef, updates);
             };
 
             const handleSaveFamilySettings = async (s) => {
-                if (!user) return;
                 await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'family_project_v1', 'status'), { familySettings: s });
                 setShowFamilyEditModal(false);
             };
@@ -278,7 +318,6 @@
                 return { ...s, theme, IconComponent: Icon, title: s.title || FAMILY_DEFAULT.defaultTitle, emoji: s.emoji || '🏆' };
             })();
 
-            // Common Icons
             const SettingsIcon = getIcon('Settings');
             const PlusIcon = getIcon('Plus');
             const SparklesIcon = getIcon('Sparkles');
@@ -298,6 +337,8 @@
             const ImageIconIcon = getIcon('Image');
             const MinusIcon = getIcon('Minus');
             const TargetIcon = getIcon('Target');
+            const LockIcon = getIcon('Lock');
+            const HistoryIcon = getIcon('History');
 
             return (
                 <div className="min-h-screen bg-slate-50 font-sans text-slate-800" dir="rtl">
@@ -306,18 +347,25 @@
                     <header className="bg-white shadow-lg p-6 sticky top-0 z-10">
                         <div className="max-w-6xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
                             <div className="flex items-center gap-3 select-none">
-                                <div className={`p-3 rounded-full cursor-pointer transition-transform active:scale-95 ${fam.theme.classes.split(' ')[0]} ${fam.theme.classes.split(' ')[2].replace('border', 'border-2')}`} {...createLongPressHandlers(() => setShowFamilyEditModal(true))}>
+                                <div className={`p-3 rounded-full cursor-pointer transition-transform active:scale-95 ${fam.theme.classes.split(' ')[0]} ${fam.theme.classes.split(' ')[2].replace('border', 'border-2')}`} 
+                                     {...createLongPressHandlers(() => requestPin(() => setShowFamilyEditModal(true)))}>
                                     <div className="w-8 h-8 flex items-center justify-center overflow-hidden rounded-full">
                                         {fam.useImage && fam.image ? <img src={fam.image} className="w-full h-full object-cover"/> : fam.useEmoji ? <span className="text-2xl leading-none">{fam.emoji}</span> : <fam.IconComponent className={`w-8 h-8 ${fam.theme.iconText}`} />}
                                     </div>
                                 </div>
                                 <div>
-                                    <h1 className="text-2xl font-bold text-slate-800 cursor-pointer" {...createLongPressHandlers(() => setShowFamilyEditModal(true))}>{fam.title}</h1>
+                                    <h1 className="text-2xl font-bold text-slate-800 cursor-pointer" {...createLongPressHandlers(() => requestPin(() => setShowFamilyEditModal(true)))}>{fam.title}</h1>
                                     <div className="text-slate-500 text-sm flex gap-2"><span>{currentDate}</span>{hebrewDate && <span className="border-r border-slate-300 pr-2">{hebrewDate}</span>}</div>
                                 </div>
                             </div>
-                            <div className="flex-1 w-full md:w-auto md:mx-8">
-                                <div className="flex justify-between mb-2 text-lg font-bold"><span className={`transition-transform duration-300 ${animationClass} text-blue-600`}>{points} נקודות</span><span className="text-slate-400">יעד: {targetPoints}</span></div>
+                            <div className="flex-1 w-full md:w-auto md:mx-8 cursor-pointer group" onClick={() => setShowHistoryModal(true)}>
+                                <div className="flex justify-between mb-2 text-lg font-bold">
+                                    <span className={`transition-transform duration-300 ${animationClass} text-blue-600 flex items-center gap-2`}>
+                                        {points} נקודות
+                                        <HistoryIcon className="w-4 h-4 text-slate-300 group-hover:text-blue-400 transition-colors" />
+                                    </span>
+                                    <span className="text-slate-400">יעד: {targetPoints}</span>
+                                </div>
                                 <div className="h-6 w-full bg-slate-200 rounded-full overflow-hidden shadow-inner">
                                     <div className="h-full bg-gradient-to-r from-blue-500 to-purple-500 transition-all duration-700 ease-out flex items-center justify-center relative" style={{ width: `${progressPercent}%` }}>
                                         {progressPercent > 10 && <div className="absolute left-0 top-0 bottom-0 w-full animate-[shimmer_2s_infinite] bg-gradient-to-r from-transparent via-white/20 to-transparent -skew-x-12"></div>}
@@ -335,8 +383,8 @@
                                 const tasks = getChildTasks(child.id);
                                 return (
                                     <div key={child.id} className={`group relative bg-white rounded-3xl p-6 border-4 ${v.theme.classes.split(' ')[2]} shadow-md hover:shadow-xl hover:-translate-y-2 transition-all duration-300 flex flex-col items-center justify-center gap-4 h-64 select-none`}
-                                        {...createLongPressHandlers(() => setEditingChildId(child.id), () => setSelectedChild(child))}>
-                                        <button onClick={(e) => { e.stopPropagation(); setEditingChildId(child.id); }} className="absolute top-2 right-2 p-2 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-400 opacity-0 group-hover:opacity-100 transition-opacity"><SettingsIcon className="w-4 h-4" /></button>
+                                        {...createLongPressHandlers(() => requestPin(() => setEditingChildId(child.id)), () => setSelectedChild(child))}>
+                                        <button onClick={(e) => { e.stopPropagation(); requestPin(() => setEditingChildId(child.id)); }} className="absolute top-2 right-2 p-2 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-400 opacity-0 group-hover:opacity-100 transition-opacity"><SettingsIcon className="w-4 h-4" /></button>
                                         <div className={`w-24 h-24 rounded-full ${v.theme.iconBg} flex items-center justify-center shadow-inner group-hover:scale-110 transition-transform overflow-hidden`}>
                                             {v.useImage && v.image ? <img src={v.image} className="w-full h-full object-cover"/> : v.useEmoji ? <span className="text-5xl leading-none">{v.emoji}</span> : <v.IconComponent className={`w-10 h-10 ${v.theme.iconText}`} />}
                                         </div>
@@ -353,7 +401,7 @@
                         const newT = { id: `custom_${Date.now()}`, text: txt, type, date: getTodayKey() };
                         updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'family_project_v1', 'status'), { childTasks: { ...tasksData, [cid]: [...getChildTasks(cid), newT] } });
                     }} onDeleteTask={(cid, tid) => {
-                        updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'family_project_v1', 'status'), { childTasks: { ...tasksData, [cid]: getChildTasks(cid).filter(t => t.id !== tid) } });
+                        requestPin(() => updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'family_project_v1', 'status'), { childTasks: { ...tasksData, [cid]: getChildTasks(cid).filter(t => t.id !== tid) } }));
                     }} getTodayKey={getTodayKey} icons={{XIcon, CheckIcon, TrashIcon, CalendarIcon, RepeatIcon, CalendarDaysIcon, StarIcon, PlusIcon}} />}
                     
                     {editingChildId && <EditChildModal childId={editingChildId} initialSettings={getChildVisuals(editingChildId)} currentSettings={childSettings[editingChildId] || {}} onClose={() => setEditingChildId(null)} onSave={async (cid, s) => {
@@ -363,7 +411,73 @@
 
                     {showFamilyEditModal && <EditFamilyModal initialSettings={fam} currentSettings={familySettings} onClose={() => setShowFamilyEditModal(false)} onSave={handleSaveFamilySettings} icons={{XIcon, TypeIcon, TargetIcon, PaletteIcon, CheckIcon, SmileIcon, CameraIcon, ImageIconIcon}} getIcon={getIcon} />}
 
-                    {showBonusModal && <BonusModal onClose={() => setShowBonusModal(false)} onConfirm={async (amt) => { triggerConfetti(); await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'family_project_v1', 'status'), { points: increment(amt) }); setShowBonusModal(false); }} icons={{SparklesIcon, MinusIcon, PlusIcon}} />}
+                    {showBonusModal && <BonusModal onClose={() => setShowBonusModal(false)} onConfirm={async (amt) => { 
+                        triggerConfetti(); playSound('ding');
+                        const newHistoryItem = { id: Date.now().toString(), childId: 'family', task: 'בונוס משפחתי', timestamp: Date.now(), points: amt };
+                        await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'family_project_v1', 'status'), { 
+                            points: increment(amt), history: [newHistoryItem, ...historyData]
+                        }); 
+                        setShowBonusModal(false); 
+                    }} icons={{SparklesIcon, MinusIcon, PlusIcon}} />}
+
+                    {showHistoryModal && (
+                        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-fade-in">
+                            <div className="bg-white w-full max-w-lg rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[80vh]">
+                                <div className="p-6 border-b border-slate-100 flex justify-between items-center bg-slate-50">
+                                    <h3 className="text-xl font-bold text-slate-800 flex items-center gap-2"><HistoryIcon className="w-5 h-5"/> היסטוריית נקודות</h3>
+                                    <button onClick={() => setShowHistoryModal(false)} className="p-2 hover:bg-slate-200 rounded-full"><XIcon className="w-5 h-5" /></button>
+                                </div>
+                                <div className="p-4 overflow-y-auto flex-1 bg-slate-50 space-y-3">
+                                    {historyData.length === 0 ? <p className="text-center text-slate-400 mt-10">אין היסטוריה עדיין...</p> : 
+                                    historyData.map(item => {
+                                        const v = item.childId === 'family' ? fam : getChildVisuals(item.childId);
+                                        return (
+                                            <div key={item.id} className="bg-white p-4 rounded-xl border border-slate-100 flex items-center justify-between shadow-sm">
+                                                <div className="flex items-center gap-3">
+                                                    <div className={`w-10 h-10 rounded-full flex items-center justify-center ${v.theme.iconBg} text-lg`}>
+                                                        {v.useImage ? <img src={v.image} className="w-full h-full object-cover rounded-full"/> : v.useEmoji ? v.emoji : <v.IconComponent className={`w-5 h-5 ${v.theme.iconText}`}/>}
+                                                    </div>
+                                                    <div>
+                                                        <p className="font-bold text-slate-800">{v.name || v.title}</p>
+                                                        <p className="text-sm text-slate-500">{item.task}</p>
+                                                    </div>
+                                                </div>
+                                                <div className="flex items-center gap-3">
+                                                    <span className="font-bold text-green-600">+{item.points}</span>
+                                                    <button onClick={() => requestPin(() => handleDeleteHistoryItem(item))} className="p-2 bg-red-50 text-red-500 rounded-full hover:bg-red-100"><TrashIcon className="w-4 h-4" /></button>
+                                                </div>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {showPinModal && (
+                        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in">
+                            <div className="bg-white w-full max-w-sm rounded-3xl shadow-2xl p-8 text-center">
+                                <div className="mx-auto w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mb-4"><LockIcon className="w-8 h-8 text-slate-500" /></div>
+                                <h3 className="text-2xl font-bold text-slate-800 mb-6">בדיקת הורים</h3>
+                                <div className="grid grid-cols-3 gap-4 mb-6" dir="ltr">
+                                    {[1,2,3,4,5,6,7,8,9].map(n => <button key={n} onClick={() => { 
+                                        const input = document.getElementById('pin-input'); 
+                                        input.value += n; 
+                                        if (input.value === PARENT_PIN) { setShowPinModal(false); pinCallback.current(); input.value = ''; }
+                                        if (input.value.length >= 4 && input.value !== PARENT_PIN) { input.classList.add('animate-pulse', 'bg-red-100'); setTimeout(()=> { input.value=''; input.classList.remove('animate-pulse', 'bg-red-100'); }, 300); }
+                                    }} className="aspect-square rounded-2xl bg-slate-50 text-2xl font-bold text-slate-700 hover:bg-slate-200 active:scale-95 transition-all tap-highlight-transparent">{n}</button>)}
+                                    <div className="aspect-square"></div>
+                                    <button onClick={() => {
+                                        const input = document.getElementById('pin-input');
+                                        input.value += 0;
+                                        if (input.value === PARENT_PIN) { setShowPinModal(false); pinCallback.current(); input.value = ''; }
+                                    }} className="aspect-square rounded-2xl bg-slate-50 text-2xl font-bold text-slate-700 hover:bg-slate-200 active:scale-95 transition-all tap-highlight-transparent">0</button>
+                                </div>
+                                <input id="pin-input" type="password" className="w-full text-center text-3xl tracking-widest font-bold border-b-2 border-slate-200 outline-none pb-2 bg-transparent" readOnly />
+                                <button onClick={() => setShowPinModal(false)} className="mt-6 text-slate-400 font-bold hover:text-slate-600">ביטול</button>
+                            </div>
+                        </div>
+                    )}
 
                     {showWinModal && (
                         <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-black/60 backdrop-blur-md animate-fade-in">
@@ -373,7 +487,7 @@
                                     <div className="mx-auto w-32 h-32 bg-gradient-to-b from-yellow-300 to-yellow-500 rounded-full flex items-center justify-center mb-6 shadow-xl border-4 border-white animate-bounce"><TrophyIcon className="w-16 h-16 text-white drop-shadow-md" /></div>
                                     <h2 className="text-5xl font-black text-slate-800 mb-2">כל הכבוד!</h2>
                                     <h3 className="text-2xl font-bold text-slate-600 mb-6">הגעתם ליעד של {targetPoints} נקודות!</h3>
-                                    <button onClick={async () => { await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'family_project_v1', 'status'), { points: 0 }); setShowWinModal(false); }} className="w-full py-4 rounded-2xl bg-gradient-to-r from-blue-500 to-blue-600 text-white font-bold text-xl shadow-xl flex items-center justify-center gap-2"><RotateCcwIcon className="w-6 h-6"/>אפס נקודות והתחל מחדש</button>
+                                    <button onClick={() => requestPin(async () => { await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'family_project_v1', 'status'), { points: 0, history: [] }); setShowWinModal(false); })} className="w-full py-4 rounded-2xl bg-gradient-to-r from-blue-500 to-blue-600 text-white font-bold text-xl shadow-xl flex items-center justify-center gap-2"><RotateCcwIcon className="w-6 h-6"/>אפס נקודות והתחל מחדש</button>
                                 </div>
                             </div>
                         </div>
@@ -424,7 +538,7 @@
                                 const isDone = completedTasks[`${getTodayKey()}_${child.id}_${task.id}`];
                                 return (
                                     <div key={task.id} className="relative group">
-                                        <button onClick={() => onToggleTask(child.id, task.id)} className={`w-full flex items-center justify-between p-5 rounded-2xl border-2 transition-all duration-200 ${isDone ? 'bg-green-50 border-green-200 shadow-none' : 'bg-white border-slate-100 shadow-md'}`}>
+                                        <button onClick={() => onToggleTask(child.id, task.id, task.text)} className={`w-full flex items-center justify-between p-5 rounded-2xl border-2 transition-all duration-200 ${isDone ? 'bg-green-50 border-green-200 shadow-none' : 'bg-white border-slate-100 shadow-md'}`}>
                                             <div className="flex items-center gap-3">{task.type==='one-time'?<CalendarIcon className="w-4 h-4 text-blue-400"/>:task.type==='daily'?<RepeatIcon className="w-4 h-4 text-purple-400"/>:<CalendarDaysIcon className="w-4 h-4 text-pink-400"/>}<span className={`text-xl font-medium ${isDone ? 'text-green-800 line-through opacity-70' : 'text-slate-700'}`}>{task.text}</span></div>
                                             <div className={`w-10 h-10 rounded-full flex items-center justify-center border-2 transition-all ${isDone ? 'bg-green-500 border-green-500 scale-110' : 'bg-white border-slate-300'}`}>{isDone && <CheckIcon className="w-6 h-6 text-white" />}</div>
                                         </button>
@@ -460,8 +574,6 @@
             const [customImage, setCustomImage] = useState(currentSettings.image || null);
             const [customName, setCustomName] = useState(currentSettings.name || initialSettings.name);
             const [isProcessing, setIsProcessing] = useState(false);
-            
-            // Icon list for selection
             const ICON_KEYS = ['trophy', 'utensils', 'shirt', 'gamepad', 'home', 'star', 'heart', 'smile', 'sun', 'moon', 'music', 'book', 'bike', 'car', 'cat', 'dog', 'flower', 'camera', 'sparkles'];
 
             return (
