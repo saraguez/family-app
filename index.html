@@ -1,528 +1,432 @@
-<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
-<html>
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
 <head>
-  <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-  <meta http-equiv="Content-Style-Type" content="text/css">
-  <title></title>
-  <meta name="Generator" content="Cocoa HTML Writer">
-  <meta name="CocoaVersion" content="2575.7">
-  <style type="text/css">
-    body {background-color: #f6f9fb}
-    p.p1 {margin: 0.0px 0.0px 0.0px 0.0px; text-align: left; font: 12.0px Times; -webkit-text-stroke: #000000}
-    p.p2 {margin: 0.0px 0.0px 0.0px 0.0px; text-align: left; font: 12.0px Times; -webkit-text-stroke: #000000; min-height: 14.0px}
-    span.s1 {font-kerning: none}
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Family Task App</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <script type="importmap">
+    {
+      "imports": {
+        "react": "https://esm.sh/react@18.2.0",
+        "react-dom/client": "https://esm.sh/react-dom@18.2.0/client",
+        "firebase/app": "https://esm.sh/firebase@10.7.1/app",
+        "firebase/auth": "https://esm.sh/firebase@10.7.1/auth",
+        "firebase/firestore": "https://esm.sh/firebase@10.7.1/firestore",
+        "lucide-react": "https://esm.sh/lucide-react@0.303.0"
+      }
+    }
+    </script>
+
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+    <style>
+        body { background-color: #f8fafc; font-family: sans-serif; }
+        #root:empty::before {
+            content: 'טוען את האפליקציה...';
+            display: block; text-align: center; margin-top: 50px; font-size: 24px; color: #64748b;
+        }
+    </style>
 </head>
 <body>
-<p dir="rtl" class="p1"><span class="s1">&lt;!DOCTYPE html&gt;</span></p>
-<p dir="rtl" class="p1"><span class="s1">&lt;html lang="he" dir="rtl"&gt;</span></p>
-<p dir="rtl" class="p1"><span class="s1">&lt;head&gt;</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">    </span>&lt;meta charset="UTF-8"&gt;</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">    </span>&lt;meta name="viewport" content="width=device-width, initial-scale=1.0"&gt;</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">    </span>&lt;title&gt;Family Task App&lt;/title&gt;</span></p>
-<p dir="rtl" class="p2"><span class="s1"><span class="Apple-converted-space">    </span></span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">    </span>&lt;script src="https://cdn.tailwindcss.com"&gt;&lt;/script&gt;</span></p>
-<p dir="rtl" class="p2"><span class="s1"><span class="Apple-converted-space">    </span></span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">    </span>&lt;script type="importmap"&gt;</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">    </span>{</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">      </span>"imports": {</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">        </span>"react": "https://esm.sh/react@18.2.0",</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">        </span>"react-dom/client": "https://esm.sh/react-dom@18.2.0/client",</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">        </span>"firebase/app": "https://esm.sh/firebase@10.7.1/app",</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">        </span>"firebase/auth": "https://esm.sh/firebase@10.7.1/auth",</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">        </span>"firebase/firestore": "https://esm.sh/firebase@10.7.1/firestore",</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">        </span>"lucide-react": "https://esm.sh/lucide-react@0.303.0"</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">      </span>}</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">    </span>}</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">    </span>&lt;/script&gt;</span></p>
-<p dir="rtl" class="p2"><span class="s1"></span><br></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">    </span>&lt;script src="https://unpkg.com/@babel/standalone/babel.min.js"&gt;&lt;/script&gt;</span></p>
-<p dir="rtl" class="p2"><span class="s1"></span><br></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">    </span>&lt;style&gt;</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">        </span>body { background-color: #f8fafc; font-family: sans-serif; }</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">        </span>/* Loading spinner */</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">        </span>#root:empty::before {</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">            </span>content: 'טוען את האפליקציה...';</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">            </span>display: block; text-align: center; margin-top: 50px; font-size: 24px; color: #64748b;</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">        </span>}</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">    </span>&lt;/style&gt;</span></p>
-<p dir="rtl" class="p1"><span class="s1">&lt;/head&gt;</span></p>
-<p dir="rtl" class="p1"><span class="s1">&lt;body&gt;</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">    </span>&lt;div id="root"&gt;&lt;/div&gt;</span></p>
-<p dir="rtl" class="p2"><span class="s1"></span><br></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">    </span>&lt;script type="text/babel" data-type="module"&gt;</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">        </span>import React, { useState, useEffect, useRef } from 'react';</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">        </span>import { createRoot } from 'react-dom/client';</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">        </span>import { initializeApp } from 'firebase/app';</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">        </span>import {<span class="Apple-converted-space"> </span></span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">            </span>getAuth,<span class="Apple-converted-space"> </span></span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">            </span>signInAnonymously,<span class="Apple-converted-space"> </span></span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">            </span>onAuthStateChanged</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">        </span>} from 'firebase/auth';</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">        </span>import {<span class="Apple-converted-space"> </span></span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">            </span>getFirestore,<span class="Apple-converted-space"> </span></span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">            </span>collection,<span class="Apple-converted-space"> </span></span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">            </span>doc,<span class="Apple-converted-space"> </span></span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">            </span>onSnapshot,<span class="Apple-converted-space"> </span></span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">            </span>setDoc,<span class="Apple-converted-space"> </span></span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">            </span>updateDoc,<span class="Apple-converted-space"> </span></span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">            </span>increment</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">        </span>} from 'firebase/firestore';</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">        </span>import {<span class="Apple-converted-space"> </span></span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">            </span>Check, Star, Trophy, Plus, Minus, X, Sparkles, Utensils, Shirt, Gamepad2,<span class="Apple-converted-space"> </span></span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">            </span>Trash2, Home, Settings, Smile, Heart, Sun, Moon, Music, Book, Bike,<span class="Apple-converted-space"> </span></span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">            </span>Car, Cat, Dog, Flower, Palette, Camera, Upload, Image as ImageIcon,<span class="Apple-converted-space"> </span></span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">            </span>Type, Calendar, Repeat, CalendarDays, RotateCcw, Target</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">        </span>} from 'lucide-react';</span></p>
-<p dir="rtl" class="p2"><span class="s1"></span><br></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">        </span>// --- YOUR KEYS (Already Filled In) ---</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">        </span>const firebaseConfig = {</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">            </span>apiKey: "AIzaSyCET42vMcj1uC0nMsqsWy2xd-yv1WC7e68",</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">            </span>authDomain: "family-tasks-ee68f.firebaseapp.com",</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">            </span>projectId: "family-tasks-ee68f",</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">            </span>storageBucket: "family-tasks-ee68f.firebasestorage.app",</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">            </span>messagingSenderId: "579816138584",</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">            </span>appId: "1:579816138584:web:1b2a3cbf4c5fd00a45e72d"</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">        </span>};</span></p>
-<p dir="rtl" class="p2"><span class="s1"></span><br></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">        </span>// Initialize Firebase</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">        </span>const app = initializeApp(firebaseConfig);</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">        </span>const auth = getAuth(app);</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">        </span>const db = getFirestore(app);</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">        </span>const appId = 'family-app-main';<span class="Apple-converted-space"> </span></span></p>
-<p dir="rtl" class="p2"><span class="s1"></span><br></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">        </span>// --- CONSTANTS ---</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">        </span>const ICON_MAP = {</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">            </span>'trophy': Trophy, 'utensils': Utensils, 'shirt': Shirt, 'gamepad': Gamepad2,</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">            </span>'home': Home, 'star': Star, 'heart': Heart, 'smile': Smile, 'sun': Sun,</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">            </span>'moon': Moon, 'music': Music, 'book': Book, 'bike': Bike, 'car': Car,</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">            </span>'cat': Cat, 'dog': Dog, 'flower': Flower, 'camera': Camera, 'sparkles': Sparkles</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">        </span>};</span></p>
-<p dir="rtl" class="p2"><span class="s1"></span><br></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">        </span>const THEMES = [</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">            </span>{ id: 'pink', name: 'ורוד', classes: 'bg-pink-100 text-pink-700 border-pink-300', iconBg: 'bg-pink-200', iconText: 'text-pink-600' },</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">            </span>{ id: 'blue', name: 'כחול', classes: 'bg-blue-100 text-blue-700 border-blue-300', iconBg: 'bg-blue-200', iconText: 'text-blue-600' },</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">            </span>{ id: 'green', name: 'ירוק', classes: 'bg-green-100 text-green-700 border-green-300', iconBg: 'bg-green-200', iconText: 'text-green-600' },</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">            </span>{ id: 'purple', name: 'סגול', classes: 'bg-purple-100 text-purple-700 border-purple-300', iconBg: 'bg-purple-200', iconText: 'text-purple-600' },</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">            </span>{ id: 'yellow', name: 'צהוב', classes: 'bg-yellow-100 text-yellow-700 border-yellow-300', iconBg: 'bg-yellow-200', iconText: 'text-yellow-600' },</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">            </span>{ id: 'orange', name: 'כתום', classes: 'bg-orange-100 text-orange-700 border-orange-300', iconBg: 'bg-orange-200', iconText: 'text-orange-600' },</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">            </span>{ id: 'teal', name: 'טורקיז', classes: 'bg-teal-100 text-teal-700 border-teal-300', iconBg: 'bg-teal-200', iconText: 'text-teal-600' },</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">            </span>{ id: 'red', name: 'אדום', classes: 'bg-red-100 text-red-700 border-red-300', iconBg: 'bg-red-200', iconText: 'text-red-600' },</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">        </span>];</span></p>
-<p dir="rtl" class="p2"><span class="s1"></span><br></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">        </span>const CHILDREN_DEFAULTS = [</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">            </span>{ id: 'mushka', name: 'חיה מושקא', defaultThemeId: 'yellow', defaultIconKey: 'home', initialTasks: [{ id: 'def_mushka_1', text: 'רצפה', type: 'daily' }] },</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">            </span>{ id: 'dvora', name: 'דבורה לאה', defaultThemeId: 'pink', defaultIconKey: 'utensils', initialTasks: [{ id: 'def_dvora_1', text: 'כלים חלבי ושיש', type: 'daily' }] },</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">            </span>{ id: 'rivka', name: 'רבקה', defaultThemeId: 'purple', defaultIconKey: 'utensils', initialTasks: [{ id: 'def_rivka_1', text: 'לפנות שולחן', type: 'daily' }, { id: 'def_rivka_2', text: 'לערוך לארוחת ערב', type: 'daily' }] },</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">            </span>{ id: 'shmuel', name: 'שמואל', defaultThemeId: 'blue', defaultIconKey: 'shirt', initialTasks: [{ id: 'def_shmuel_1', text: 'לפנות את הספה', type: 'daily' }, { id: 'def_shmuel_2', text: 'לאסוף בגדים מלוכלכים לכביסה', type: 'daily' }] },</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">            </span>{ id: 'pitzo', name: 'יוסף יצחק', defaultThemeId: 'green', defaultIconKey: 'gamepad', initialTasks: [{ id: 'def_pitzo_1', text: 'לאסוף משחקים', type: 'daily' }, { id: 'def_pitzo_2', text: 'לאסוף נעליים', type: 'daily' }] }</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">        </span>];</span></p>
-<p dir="rtl" class="p2"><span class="s1"></span><br></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">        </span>const FAMILY_DEFAULT = { defaultThemeId: 'yellow', defaultIconKey: 'trophy', defaultTitle: 'המבצע המשפחתי', defaultTarget: 100 };</span></p>
-<p dir="rtl" class="p2"><span class="s1"></span><br></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">        </span>// Helper: Number to Hebrew Gematria</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">        </span>const toHebrewNumeral = (n) =&gt; {</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">            </span>if (!n || n &lt; 1 || n &gt; 31) return n;</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">            </span>const letters = ['', 'א׳', 'ב׳', 'ג׳', 'ד׳', 'ה׳', 'ו׳', 'ז׳', 'ח׳', 'ט׳', 'י׳', 'י״א', 'י״ב', 'י״ג', 'י״ד', 'ט״ו', 'ט״ז', 'י״ז', 'י״ח', 'י״ט', 'כ׳', 'כ״א', 'כ״ב', 'כ״ג', 'כ״ד', 'כ״ה', 'כ״ו', 'כ״ז', 'כ״ח', 'כ״ט', 'ל׳', 'ל״א'];</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">            </span>return letters[n] || n;</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">        </span>};</span></p>
-<p dir="rtl" class="p2"><span class="s1"></span><br></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">        </span>// Helper: Resize Image</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">        </span>const resizeImage = (file) =&gt; {</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">            </span>return new Promise((resolve) =&gt; {</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">                </span>const reader = new FileReader();</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">                </span>reader.onload = (event) =&gt; {</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">                    </span>const img = new Image();</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">                    </span>img.onload = () =&gt; {</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">                        </span>const canvas = document.createElement('canvas');</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">                        </span>const MAX_WIDTH = 300; const MAX_HEIGHT = 300;</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">                        </span>let width = img.width; let height = img.height;</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">                        </span>if (width &gt; height) { if (width &gt; MAX_WIDTH) { height *= MAX_WIDTH / width; width = MAX_WIDTH; } }<span class="Apple-converted-space"> </span></span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">                        </span>else { if (height &gt; MAX_HEIGHT) { width *= MAX_HEIGHT / height; height = MAX_HEIGHT; } }</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">                        </span>canvas.width = width; canvas.height = height;</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">                        </span>const ctx = canvas.getContext('2d');</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">                        </span>ctx.drawImage(img, 0, 0, width, height);</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">                        </span>resolve(canvas.toDataURL('image/jpeg', 0.7));</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">                    </span>};</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">                    </span>img.src = event.target.result;</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">                </span>};</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">                </span>reader.readAsDataURL(file);</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">            </span>});</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">        </span>};</span></p>
-<p dir="rtl" class="p2"><span class="s1"></span><br></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">        </span>// --- Confetti Component ---</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">        </span>function Confetti({ density = 150 }) {</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">            </span>const canvasRef = useRef(null);</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">            </span>useEffect(() =&gt; {</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">                </span>const canvas = canvasRef.current;</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">                </span>if (!canvas) return;</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">                </span>const ctx = canvas.getContext('2d');</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">                </span>const updateSize = () =&gt; { canvas.width = window.innerWidth; canvas.height = window.innerHeight; };</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">                </span>updateSize();</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">                </span>window.addEventListener('resize', updateSize);</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">                </span>const colors = ['#FCD34D', '#F87171', '#60A5FA', '#34D399', '#A78BFA', '#F472B6'];</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">                </span>const particles = Array.from({ length: density }).map(() =&gt; ({</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">                    </span>x: Math.random() * canvas.width, y: -Math.random() * canvas.height,</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">                    </span>color: colors[Math.floor(Math.random() * colors.length)],</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">                    </span>size: Math.random() * 8 + 4, weight: Math.random() * 3 + 2,</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">                    </span>angle: Math.random() * 360, spin: Math.random() * 5 - 2.5, oscillationSpeed: Math.random() * 0.05 + 0.02</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">                </span>}));</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">                </span>let animationId;</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">                </span>function animate() {</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">                    </span>ctx.clearRect(0, 0, canvas.width, canvas.height);</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">                    </span>particles.forEach(p =&gt; {</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">                        </span>p.y += p.weight; p.angle += p.spin; p.x += Math.sin(p.angle * p.oscillationSpeed) * 2;</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">                        </span>if (p.y &gt; canvas.height) { p.y = -10; p.x = Math.random() * canvas.width; }</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">                        </span>ctx.save(); ctx.translate(p.x, p.y); ctx.rotate(p.angle * Math.PI / 180);</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">                        </span>ctx.fillStyle = p.color; ctx.fillRect(-p.size / 2, -p.size / 2, p.size, p.size); ctx.restore();</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">                    </span>});</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">                    </span>animationId = requestAnimationFrame(animate);</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">                </span>}</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">                </span>animate();</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">                </span>return () =&gt; { cancelAnimationFrame(animationId); window.removeEventListener('resize', updateSize); };</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">            </span>}, [density]);</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">            </span>return &lt;canvas ref={canvasRef} className="fixed inset-0 pointer-events-none z-[100]" /&gt;;</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">        </span>}</span></p>
-<p dir="rtl" class="p2"><span class="s1"></span><br></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">        </span>// --- MAIN APP COMPONENT ---</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">        </span>function App() {</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">            </span>const [user, setUser] = useState(null);</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">            </span>const [points, setPoints] = useState(0);</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">            </span>const [completedTasks, setCompletedTasks] = useState({});<span class="Apple-converted-space"> </span></span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">            </span>const [childSettings, setChildSettings] = useState({});<span class="Apple-converted-space"> </span></span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">            </span>const [familySettings, setFamilySettings] = useState({});<span class="Apple-converted-space"> </span></span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">            </span>const [tasksData, setTasksData] = useState({});</span></p>
-<p dir="rtl" class="p2"><span class="s1"><span class="Apple-converted-space">            </span></span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">            </span>const [selectedChild, setSelectedChild] = useState(null);</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">            </span>const [editingChildId, setEditingChildId] = useState(null);</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">            </span>const [showFamilyEditModal, setShowFamilyEditModal] = useState(false);</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">            </span>const [showBonusModal, setShowBonusModal] = useState(false);</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">            </span>const [showWinModal, setShowWinModal] = useState(false);</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">            </span>const [animationClass, setAnimationClass] = useState('');</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">            </span>const [showConfetti, setShowConfetti] = useState(false);</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">            </span>const confettiTimeoutRef = useRef(null);</span></p>
-<p dir="rtl" class="p2"><span class="s1"><span class="Apple-converted-space">            </span></span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">            </span>const [currentDate, setCurrentDate] = useState('');</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">            </span>const [hebrewDate, setHebrewDate] = useState('');</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">            </span>const targetPoints = familySettings.targetPoints || FAMILY_DEFAULT.defaultTarget;</span></p>
-<p dir="rtl" class="p2"><span class="s1"></span><br></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">            </span>// Long Press Logic</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">            </span>const longPressTimer = useRef(null);</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">            </span>const isLongPress = useRef(false);</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">            </span>const createLongPressHandlers = (callback, onClick) =&gt; ({</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">                </span>onMouseDown: () =&gt; { isLongPress.current = false; longPressTimer.current = setTimeout(() =&gt; { isLongPress.current = true; callback(); }, 800); },</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">                </span>onMouseUp: (e) =&gt; { if (longPressTimer.current) clearTimeout(longPressTimer.current); if (!isLongPress.current &amp;&amp; onClick) onClick(e); },</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">                </span>onMouseLeave: () =&gt; { if (longPressTimer.current) clearTimeout(longPressTimer.current); },</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">                </span>onTouchStart: () =&gt; { isLongPress.current = false; longPressTimer.current = setTimeout(() =&gt; { isLongPress.current = true; callback(); }, 800); },</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">                </span>onTouchEnd: (e) =&gt; { if (longPressTimer.current) clearTimeout(longPressTimer.current); if (isLongPress.current) e.preventDefault(); if (!isLongPress.current &amp;&amp; onClick) onClick(e); }</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">            </span>});</span></p>
-<p dir="rtl" class="p2"><span class="s1"></span><br></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">            </span>// 1. Initialize Auth &amp; Dates</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">            </span>useEffect(() =&gt; {</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">                </span>const initAuth = async () =&gt; { await signInAnonymously(auth); };</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">                </span>initAuth();</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">                </span>const unsubscribe = onAuthStateChanged(auth, setUser);</span></p>
-<p dir="rtl" class="p2"><span class="s1"><span class="Apple-converted-space">                </span></span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">                </span>const now = new Date();</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">                </span>setCurrentDate(now.toLocaleDateString('he-IL', { weekday: 'long', year: 'numeric', month: 'numeric', day: 'numeric' }));</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">                </span>try {</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">                    </span>const parts = new Intl.DateTimeFormat('he-IL', { calendar: 'hebrew', day: 'numeric', month: 'long', year: 'numeric' }).formatToParts(now);</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">                    </span>const day = parts.find(p =&gt; p.type === 'day')?.value;</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">                    </span>const month = parts.find(p =&gt; p.type === 'month')?.value;</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">                    </span>const year = parts.find(p =&gt; p.type === 'year')?.value;</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">                    </span>if (day &amp;&amp; month &amp;&amp; year) { setHebrewDate(`${toHebrewNumeral(parseInt(day, 10))} ${month} ${year}`); }</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">                </span>} catch (e) { console.log("Hebrew calendar error", e); }</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">                </span>return () =&gt; unsubscribe();</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">            </span>}, []);</span></p>
-<p dir="rtl" class="p2"><span class="s1"></span><br></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">            </span>// 2. Sync Data</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">            </span>useEffect(() =&gt; {</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">                </span>if (!user) return;</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">                </span>const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'family_project_v1', 'status');</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">                </span>const unsubscribe = onSnapshot(docRef, (docSnap) =&gt; {</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">                    </span>if (docSnap.exists()) {</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">                        </span>const data = docSnap.data();</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">                        </span>setPoints(Number(data.points) || 0);</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">                        </span>setCompletedTasks(data.completedTasks || {});</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">                        </span>setChildSettings(data.childSettings || {});</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">                        </span>setFamilySettings(data.familySettings || {});</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">                        </span>setTasksData(data.childTasks || {});</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">                    </span>} else {</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">                        </span>setDoc(docRef, { points: 0, completedTasks: {}, childSettings: {}, familySettings: {}, childTasks: {} });</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">                    </span>}</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">                </span>});</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">                </span>return () =&gt; unsubscribe();</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">            </span>}, [user]);</span></p>
-<p dir="rtl" class="p2"><span class="s1"></span><br></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">            </span>// 3. Win Condition</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">            </span>useEffect(() =&gt; { if (points &gt;= targetPoints &amp;&amp; points &gt; 0) setShowWinModal(true); }, [points, targetPoints]);</span></p>
-<p dir="rtl" class="p2"><span class="s1"></span><br></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">            </span>// Handlers</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">            </span>const getTodayKey = () =&gt; { const d = new Date(); return `${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}`; };</span></p>
-<p dir="rtl" class="p2"><span class="s1"><span class="Apple-converted-space">            </span></span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">            </span>const getChildVisuals = (childId) =&gt; {</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">                </span>const def = CHILDREN_DEFAULTS.find(c =&gt; c.id === childId);</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">                </span>const s = childSettings[childId] || {};</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">                </span>const theme = THEMES.find(t =&gt; t.id === (s.themeId || def.defaultThemeId)) || THEMES[0];</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">                </span>const Icon = ICON_MAP[s.iconKey || def.defaultIconKey] || Smile;</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">                </span>return { ...s, theme, IconComponent: Icon, name: s.name || def.name, emoji: s.emoji || '😊' };</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">            </span>};</span></p>
-<p dir="rtl" class="p2"><span class="s1"></span><br></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">            </span>const getChildTasks = (childId) =&gt; {</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">                </span>if (tasksData[childId]) {</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">                    </span>const today = getTodayKey(); const day = new Date().getDay();<span class="Apple-converted-space"> </span></span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">                    </span>return tasksData[childId].filter(t =&gt; t.type === 'daily' || (t.type === 'one-time' &amp;&amp; t.date === today) || (t.type === 'friday' &amp;&amp; day === 5));</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">                </span>}</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">                </span>return CHILDREN_DEFAULTS.find(c =&gt; c.id === childId)?.initialTasks || [];</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">            </span>};</span></p>
-<p dir="rtl" class="p2"><span class="s1"></span><br></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">            </span>const triggerConfetti = () =&gt; {</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">                </span>setAnimationClass('scale-110'); setTimeout(() =&gt; setAnimationClass(''), 200);</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">                </span>setShowConfetti(true); if (confettiTimeoutRef.current) clearTimeout(confettiTimeoutRef.current);</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">                </span>confettiTimeoutRef.current = setTimeout(() =&gt; setShowConfetti(false), 3000);<span class="Apple-converted-space"> </span></span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">            </span>};</span></p>
-<p dir="rtl" class="p2"><span class="s1"></span><br></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">            </span>const handleTaskToggle = async (childId, taskId) =&gt; {</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">                </span>if (!user) return;</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">                </span>const key = `${getTodayKey()}_${childId}_${taskId}`;</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">                </span>const isDone = completedTasks[key];</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">                </span>const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'family_project_v1', 'status');</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">                </span>triggerConfetti();</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">                </span>await updateDoc(docRef, { points: increment(isDone ? -1 : 1), [`completedTasks.${key}`]: !isDone });</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">            </span>};</span></p>
-<p dir="rtl" class="p2"><span class="s1"></span><br></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">            </span>const handleSaveFamilySettings = async (s) =&gt; {</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">                </span>if (!user) return;</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">                </span>await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'family_project_v1', 'status'), { familySettings: s });</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">                </span>setShowFamilyEditModal(false);</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">            </span>};</span></p>
-<p dir="rtl" class="p2"><span class="s1"></span><br></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">            </span>const progressPercent = Math.min((points / targetPoints) * 100, 100);</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">            </span>const fam = (() =&gt; {</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">                </span>const s = familySettings || {};</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">                </span>const theme = THEMES.find(t =&gt; t.id === (s.themeId || FAMILY_DEFAULT.defaultThemeId)) || THEMES[0];</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">                </span>const Icon = ICON_MAP[s.iconKey || FAMILY_DEFAULT.defaultIconKey] || Trophy;</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">                </span>return { ...s, theme, IconComponent: Icon, title: s.title || FAMILY_DEFAULT.defaultTitle, emoji: s.emoji || '🏆' };</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">            </span>})();</span></p>
-<p dir="rtl" class="p2"><span class="s1"></span><br></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">            </span>// -- RENDER --</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">            </span>return (</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">                </span>&lt;div className="min-h-screen bg-slate-50 font-sans text-slate-800" dir="rtl"&gt;</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">                    </span>{(showConfetti || showWinModal) &amp;&amp; &lt;Confetti density={showWinModal ? 400 : 150} /&gt;}</span></p>
-<p dir="rtl" class="p2"><span class="s1"></span><br></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">                    </span>&lt;header className="bg-white shadow-lg p-6 sticky top-0 z-10"&gt;</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">                        </span>&lt;div className="max-w-6xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4"&gt;</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">                            </span>&lt;div className="flex items-center gap-3 select-none"&gt;</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">                                </span>&lt;div className={`p-3 rounded-full cursor-pointer transition-transform active:scale-95 ${fam.theme.classes.split(' ')[0]} ${fam.theme.classes.split(' ')[2].replace('border', 'border-2')}`} {...createLongPressHandlers(() =&gt; setShowFamilyEditModal(true))}&gt;</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">                                    </span>&lt;div className="w-8 h-8 flex items-center justify-center overflow-hidden rounded-full"&gt;</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">                                        </span>{fam.useImage &amp;&amp; fam.image ? &lt;img src={fam.image} className="w-full h-full object-cover"/&gt; : fam.useEmoji ? &lt;span className="text-2xl leading-none"&gt;{fam.emoji}&lt;/span&gt; : &lt;fam.IconComponent className={`w-8 h-8 ${fam.theme.iconText}`} /&gt;}</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">                                    </span>&lt;/div&gt;</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">                                </span>&lt;/div&gt;</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">                                </span>&lt;div&gt;</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">                                    </span>&lt;h1 className="text-2xl font-bold text-slate-800 cursor-pointer" {...createLongPressHandlers(() =&gt; setShowFamilyEditModal(true))}&gt;{fam.title}&lt;/h1&gt;</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">                                    </span>&lt;div className="text-slate-500 text-sm flex gap-2"&gt;&lt;span&gt;{currentDate}&lt;/span&gt;{hebrewDate &amp;&amp; &lt;span className="border-r border-slate-300 pr-2"&gt;{hebrewDate}&lt;/span&gt;}&lt;/div&gt;</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">                                </span>&lt;/div&gt;</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">                            </span>&lt;/div&gt;</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">                            </span>&lt;div className="flex-1 w-full md:w-auto md:mx-8"&gt;</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">                                </span>&lt;div className="flex justify-between mb-2 text-lg font-bold"&gt;&lt;span className={`transition-transform duration-300 ${animationClass} text-blue-600`}&gt;{points} נקודות&lt;/span&gt;&lt;span className="text-slate-400"&gt;יעד: {targetPoints}&lt;/span&gt;&lt;/div&gt;</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">                                </span>&lt;div className="h-6 w-full bg-slate-200 rounded-full overflow-hidden shadow-inner"&gt;</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">                                    </span>&lt;div className="h-full bg-gradient-to-r from-blue-500 to-purple-500 transition-all duration-700 ease-out flex items-center justify-center relative" style={{ width: `${progressPercent}%` }}&gt;</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">                                        </span>{progressPercent &gt; 10 &amp;&amp; &lt;div className="absolute left-0 top-0 bottom-0 w-full animate-[shimmer_2s_infinite] bg-gradient-to-r from-transparent via-white/20 to-transparent -skew-x-12"&gt;&lt;/div&gt;}</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">                                    </span>&lt;/div&gt;</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">                                </span>&lt;/div&gt;</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">                            </span>&lt;/div&gt;</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">                            </span>&lt;button onClick={() =&gt; setShowBonusModal(true)} className="flex items-center gap-2 bg-gradient-to-r from-orange-400 to-red-500 text-white px-6 py-3 rounded-xl font-bold shadow-md hover:shadow-lg transform active:scale-95 transition-all"&gt;&lt;Sparkles className="w-5 h-5" /&gt;&lt;span&gt;בונוס&lt;/span&gt;&lt;/button&gt;</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">                        </span>&lt;/div&gt;</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">                    </span>&lt;/header&gt;</span></p>
-<p dir="rtl" class="p2"><span class="s1"></span><br></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">                    </span>&lt;main className="max-w-6xl mx-auto p-6"&gt;</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">                        </span>&lt;div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-6 mt-4"&gt;</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">                            </span>{CHILDREN_DEFAULTS.map((child) =&gt; {</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">                                </span>const v = getChildVisuals(child.id);</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">                                </span>const tasks = getChildTasks(child.id);</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">                                </span>const doneCount = tasks.filter(t =&gt; completedTasks[`${getTodayKey()}_${child.id}_${t.id}`]).length;</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">                                </span>return (</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">                                    </span>&lt;div key={child.id} className={`group relative bg-white rounded-3xl p-6 border-4 ${v.theme.classes.split(' ')[2]} shadow-md hover:shadow-xl hover:-translate-y-2 transition-all duration-300 flex flex-col items-center justify-center gap-4 h-64 select-none`}</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">                                        </span>{...createLongPressHandlers(() =&gt; setEditingChildId(child.id), () =&gt; setSelectedChild(child))}&gt;</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">                                        </span>&lt;button onClick={(e) =&gt; { e.stopPropagation(); setEditingChildId(child.id); }} className="absolute top-2 right-2 p-2 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-400 opacity-0 group-hover:opacity-100 transition-opacity"&gt;&lt;Settings className="w-4 h-4" /&gt;&lt;/button&gt;</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">                                        </span>&lt;div className={`w-24 h-24 rounded-full ${v.theme.iconBg} flex items-center justify-center shadow-inner group-hover:scale-110 transition-transform overflow-hidden`}&gt;</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">                                            </span>{v.useImage &amp;&amp; v.image ? &lt;img src={v.image} className="w-full h-full object-cover"/&gt; : v.useEmoji ? &lt;span className="text-5xl leading-none"&gt;{v.emoji}&lt;/span&gt; : &lt;v.IconComponent className={`w-10 h-10 ${v.theme.iconText}`} /&gt;}</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">                                        </span>&lt;/div&gt;</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">                                        </span>&lt;h2 className="text-2xl font-bold text-center mt-4"&gt;{v.name}&lt;/h2&gt;</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">                                        </span>&lt;div className="flex gap-1 mt-2"&gt;{tasks.map(t =&gt; &lt;div key={t.id} className={`w-3 h-3 rounded-full ${completedTasks[`${getTodayKey()}_${child.id}_${t.id}`] ? 'bg-green-500' : 'bg-slate-200'}`} /&gt;)}&lt;/div&gt;</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">                                        </span>&lt;div className="absolute top-4 left-4 bg-slate-100 rounded-full p-1 opacity-0 group-hover:opacity-100 pointer-events-none"&gt;&lt;Plus className="w-5 h-5 text-slate-400" /&gt;&lt;/div&gt;</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">                                    </span>&lt;/div&gt;</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">                                </span>);</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">                            </span>})}</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">                        </span>&lt;/div&gt;</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">                    </span>&lt;/main&gt;</span></p>
-<p dir="rtl" class="p2"><span class="s1"></span><br></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">                    </span>{/* Modals */}</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">                    </span>{selectedChild &amp;&amp; &lt;TaskModal child={selectedChild} tasks={getChildTasks(selectedChild.id)} completedTasks={completedTasks} visuals={getChildVisuals(selectedChild.id)} onToggleTask={handleTaskToggle} onClose={() =&gt; setSelectedChild(null)} onAddTask={(cid, txt, type) =&gt; {</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">                        </span>const newT = { id: `custom_${Date.now()}`, text: txt, type, date: getTodayKey() };</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">                        </span>updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'family_project_v1', 'status'), { childTasks: { ...tasksData, [cid]: [...getChildTasks(cid), newT] } });</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">                    </span>}} onDeleteTask={(cid, tid) =&gt; {</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">                        </span>updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'family_project_v1', 'status'), { childTasks: { ...tasksData, [cid]: getChildTasks(cid).filter(t =&gt; t.id !== tid) } });</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">                    </span>}} getTodayKey={getTodayKey} /&gt;}</span></p>
-<p dir="rtl" class="p2"><span class="s1"><span class="Apple-converted-space">                    </span></span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">                    </span>{editingChildId &amp;&amp; &lt;EditChildModal childId={editingChildId} initialSettings={getChildVisuals(editingChildId)} currentSettings={childSettings[editingChildId] || {}} onClose={() =&gt; setEditingChildId(null)} onSave={async (cid, s) =&gt; {</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">                        </span>await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'family_project_v1', 'status'), { childSettings: { ...childSettings, [cid]: { ...childSettings[cid], ...s } } });</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">                        </span>setEditingChildId(null);</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">                    </span>}} /&gt;}</span></p>
-<p dir="rtl" class="p2"><span class="s1"></span><br></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">                    </span>{showFamilyEditModal &amp;&amp; &lt;EditFamilyModal initialSettings={fam} currentSettings={familySettings} onClose={() =&gt; setShowFamilyEditModal(false)} onSave={handleSaveFamilySettings} /&gt;}</span></p>
-<p dir="rtl" class="p2"><span class="s1"></span><br></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">                    </span>{showBonusModal &amp;&amp; &lt;BonusModal onClose={() =&gt; setShowBonusModal(false)} onConfirm={async (amt) =&gt; { triggerConfetti(); await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'family_project_v1', 'status'), { points: increment(amt) }); setShowBonusModal(false); }} /&gt;}</span></p>
-<p dir="rtl" class="p2"><span class="s1"></span><br></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">                    </span>{showWinModal &amp;&amp; (</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">                        </span>&lt;div className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-black/60 backdrop-blur-md animate-fade-in"&gt;</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">                            </span>&lt;div className="bg-white w-full max-w-lg rounded-[2.5rem] shadow-2xl p-8 text-center animate-scale-up border-8 border-yellow-300 relative overflow-hidden"&gt;</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">                                </span>&lt;div className="absolute top-0 left-0 w-full h-32 bg-yellow-100 rounded-b-[50%] -translate-y-16"&gt;&lt;/div&gt;</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">                                </span>&lt;div className="relative z-10"&gt;</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">                                    </span>&lt;div className="mx-auto w-32 h-32 bg-gradient-to-b from-yellow-300 to-yellow-500 rounded-full flex items-center justify-center mb-6 shadow-xl border-4 border-white animate-bounce"&gt;&lt;Trophy className="w-16 h-16 text-white drop-shadow-md" /&gt;&lt;/div&gt;</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">                                    </span>&lt;h2 className="text-5xl font-black text-slate-800 mb-2"&gt;כל הכבוד!&lt;/h2&gt;</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">                                    </span>&lt;h3 className="text-2xl font-bold text-slate-600 mb-6"&gt;הגעתם ליעד של {targetPoints} נקודות!&lt;/h3&gt;</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">                                    </span>&lt;button onClick={async () =&gt; { await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'family_project_v1', 'status'), { points: 0 }); setShowWinModal(false); }} className="w-full py-4 rounded-2xl bg-gradient-to-r from-blue-500 to-blue-600 text-white font-bold text-xl shadow-xl flex items-center justify-center gap-2"&gt;&lt;RotateCcw className="w-6 h-6"/&gt;אפס נקודות והתחל מחדש&lt;/button&gt;</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">                                </span>&lt;/div&gt;</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">                            </span>&lt;/div&gt;</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">                        </span>&lt;/div&gt;</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">                    </span>)}</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">                    </span>&lt;style&gt;{`@keyframes shimmer { 0% { transform: translateX(-150%); } 50% { transform: translateX(150%); } 100% { transform: translateX(150%); } } @keyframes fade-in { from { opacity: 0; } to { opacity: 1; } } @keyframes slide-up { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } } @keyframes scale-up { from { opacity: 0; transform: scale(0.9); } to { opacity: 1; transform: scale(1); } } .animate-fade-in { animation: fade-in 0.2s ease-out; } .animate-slide-up { animation: slide-up 0.3s cubic-bezier(0.16, 1, 0.3, 1); } .animate-scale-up { animation: scale-up 0.2s cubic-bezier(0.16, 1, 0.3, 1); }`}&lt;/style&gt;</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">                </span>&lt;/div&gt;</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">            </span>);</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">        </span>}</span></p>
-<p dir="rtl" class="p2"><span class="s1"></span><br></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">        </span>// --- SUB COMPONENTS ---</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">        </span>function BonusModal({ onClose, onConfirm }) {</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">            </span>const [amount, setAmount] = useState(1);</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">            </span>return (</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">                </span>&lt;div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm animate-fade-in"&gt;</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">                    </span>&lt;div className="bg-white w-full max-w-md rounded-3xl shadow-2xl p-6 text-center animate-scale-up"&gt;</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">                        </span>&lt;div className="mx-auto w-16 h-16 bg-gradient-to-br from-orange-400 to-red-500 rounded-full flex items-center justify-center mb-4 shadow-lg"&gt;&lt;Sparkles className="w-8 h-8 text-white" /&gt;&lt;/div&gt;</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">                        </span>&lt;h3 className="text-2xl font-bold text-slate-800 mb-2"&gt;הוספת בונוס&lt;/h3&gt;</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">                        </span>&lt;div className="flex items-center justify-center gap-4 mb-8"&gt;</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">                            </span>&lt;button onClick={() =&gt; setAmount(Math.max(1, amount - 1))} className="w-12 h-12 rounded-full bg-slate-100 flex items-center justify-center"&gt;&lt;Minus className="w-6 h-6" /&gt;&lt;/button&gt;</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">                            </span>&lt;div className="text-6xl font-black text-transparent bg-clip-text bg-gradient-to-r from-orange-500 to-red-600 w-24 tabular-nums"&gt;{amount}&lt;/div&gt;</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">                            </span>&lt;button onClick={() =&gt; setAmount(Math.min(10, amount + 1))} className="w-12 h-12 rounded-full bg-slate-100 flex items-center justify-center"&gt;&lt;Plus className="w-6 h-6" /&gt;&lt;/button&gt;</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">                        </span>&lt;/div&gt;</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">                        </span>&lt;div className="flex gap-4 justify-center"&gt;&lt;button onClick={onClose} className="px-6 py-3 rounded-xl border-2 border-slate-200"&gt;ביטול&lt;/button&gt;&lt;button onClick={() =&gt; onConfirm(amount)} className="px-8 py-3 rounded-xl bg-gradient-to-r from-orange-400 to-red-500 text-white font-bold"&gt;הוסף!&lt;/button&gt;&lt;/div&gt;</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">                    </span>&lt;/div&gt;</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">                </span>&lt;/div&gt;</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">            </span>);</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">        </span>}</span></p>
-<p dir="rtl" class="p2"><span class="s1"></span><br></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">        </span>function TaskModal({ child, tasks, completedTasks, visuals, onToggleTask, onClose, onAddTask, onDeleteTask, getTodayKey }) {</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">            </span>const { theme, IconComponent, useEmoji, emoji, useImage, image, name } = visuals;</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">            </span>const [isAdding, setIsAdding] = useState(false);</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">            </span>const [newTaskText, setNewTaskText] = useState("");</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">            </span>const [newTaskType, setNewTaskType] = useState("daily");</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">            </span>return (</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">                </span>&lt;div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm animate-fade-in"&gt;</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">                    </span>&lt;div className="bg-white w-full max-w-lg rounded-3xl shadow-2xl overflow-hidden animate-slide-up flex flex-col max-h-[90vh]" onClick={(e) =&gt; e.stopPropagation()}&gt;</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">                        </span>&lt;div className={`${theme.iconBg} p-6 flex items-center justify-between flex-shrink-0`}&gt;</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">                            </span>&lt;div className="flex items-center gap-4"&gt;</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">                                </span>&lt;div className="bg-white/50 p-1 rounded-full flex items-center justify-center w-16 h-16 overflow-hidden border-2 border-white/50"&gt;{useImage &amp;&amp; image ? &lt;img src={image} className="w-full h-full object-cover rounded-full" /&gt; : useEmoji ? &lt;span className="text-3xl"&gt;{emoji}&lt;/span&gt; : &lt;IconComponent className={`w-8 h-8 ${theme.iconText}`} /&gt;}&lt;/div&gt;</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">                                </span>&lt;div&gt;&lt;h2 className="text-3xl font-bold text-slate-800"&gt;{name}&lt;/h2&gt;&lt;p className="text-slate-600 text-lg"&gt;המשימות להיום&lt;/p&gt;&lt;/div&gt;</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">                            </span>&lt;/div&gt;</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">                            </span>&lt;button onClick={onClose} className="bg-white/50 p-2 rounded-full"&gt;&lt;X className="w-6 h-6 text-slate-700" /&gt;&lt;/button&gt;</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">                        </span>&lt;/div&gt;</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">                        </span>&lt;div className="p-8 space-y-4 overflow-y-auto flex-1"&gt;</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">                            </span>{tasks.map((task) =&gt; {</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">                                </span>const isDone = completedTasks[`${getTodayKey()}_${child.id}_${task.id}`];</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">                                </span>return (</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">                                    </span>&lt;div key={task.id} className="relative group"&gt;</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">                                        </span>&lt;button onClick={() =&gt; onToggleTask(child.id, task.id)} className={`w-full flex items-center justify-between p-5 rounded-2xl border-2 transition-all duration-200 ${isDone ? 'bg-green-50 border-green-200 shadow-none' : 'bg-white border-slate-100 shadow-md'}`}&gt;</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">                                            </span>&lt;div className="flex items-center gap-3"&gt;{task.type==='one-time'?&lt;Calendar className="w-4 h-4 text-blue-400"/&gt;:task.type==='daily'?&lt;Repeat className="w-4 h-4 text-purple-400"/&gt;:&lt;CalendarDays className="w-4 h-4 text-pink-400"/&gt;}&lt;span className={`text-xl font-medium ${isDone ? 'text-green-800 line-through opacity-70' : 'text-slate-700'}`}&gt;{task.text}&lt;/span&gt;&lt;/div&gt;</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">                                            </span>&lt;div className={`w-10 h-10 rounded-full flex items-center justify-center border-2 transition-all ${isDone ? 'bg-green-500 border-green-500 scale-110' : 'bg-white border-slate-300'}`}&gt;{isDone &amp;&amp; &lt;Check className="w-6 h-6 text-white" /&gt;}&lt;/div&gt;</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">                                        </span>&lt;/button&gt;</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">                                        </span>&lt;button onClick={(e) =&gt; { e.stopPropagation(); onDeleteTask(child.id, task.id); }} className="absolute -left-2 top-1/2 -translate-y-1/2 -translate-x-full p-2 bg-red-100 text-red-500 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"&gt;&lt;Trash2 className="w-5 h-5" /&gt;&lt;/button&gt;</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">                                    </span>&lt;/div&gt;</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">                                </span>);</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">                            </span>})}</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">                            </span>{tasks.length &gt; 0 &amp;&amp; tasks.every((t) =&gt; completedTasks[`${getTodayKey()}_${child.id}_${t.id}`]) &amp;&amp; &lt;div className="mt-6 text-center bg-yellow-50 p-4 rounded-xl border border-yellow-200 text-yellow-800 animate-pulse"&gt;&lt;Star className="w-8 h-8 mx-auto mb-2 text-yellow-500 fill-yellow-500" /&gt;&lt;p className="font-bold text-lg"&gt;כל הכבוד! סיימת את כל המשימות להיום!&lt;/p&gt;&lt;/div&gt;}</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">                        </span>&lt;/div&gt;</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">                        </span>&lt;div className="p-4 border-t border-slate-100 bg-slate-50"&gt;</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">                            </span>{!isAdding ? &lt;button onClick={() =&gt; setIsAdding(true)} className="w-full py-3 rounded-xl border-2 border-dashed border-slate-300 text-slate-500 font-bold hover:bg-white flex items-center justify-center gap-2"&gt;&lt;Plus className="w-5 h-5" /&gt;הוסף משימה חדשה&lt;/button&gt; :<span class="Apple-converted-space"> </span></span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">                            </span>&lt;div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm animate-fade-in"&gt;</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">                                </span>&lt;input type="text" placeholder="שם המשימה..." value={newTaskText} onChange={(e) =&gt; setNewTaskText(e.target.value)} className="w-full p-3 rounded-lg border border-slate-300 mb-3" autoFocus /&gt;</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">                                </span>&lt;div className="flex gap-2 mb-3"&gt;</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">                                    </span>&lt;button onClick={() =&gt; setNewTaskType('daily')} className={`flex-1 py-2 rounded-lg text-sm font-bold border ${newTaskType==='daily'?'bg-purple-100 text-purple-700 border-purple-300':'bg-slate-50 border-slate-200'}`}&gt;כל יום&lt;/button&gt;</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">                                    </span>&lt;button onClick={() =&gt; setNewTaskType('friday')} className={`flex-1 py-2 rounded-lg text-sm font-bold border ${newTaskType==='friday'?'bg-pink-100 text-pink-700 border-pink-300':'bg-slate-50 border-slate-200'}`}&gt;יום שישי&lt;/button&gt;</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">                                    </span>&lt;button onClick={() =&gt; setNewTaskType('one-time')} className={`flex-1 py-2 rounded-lg text-sm font-bold border ${newTaskType==='one-time'?'bg-blue-100 text-blue-700 border-blue-300':'bg-slate-50 border-slate-200'}`}&gt;רק להיום&lt;/button&gt;</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">                                </span>&lt;/div&gt;</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">                                </span>&lt;div className="flex gap-2"&gt;&lt;button onClick={() =&gt; setIsAdding(false)} className="flex-1 py-2 text-slate-500 font-bold hover:bg-slate-100 rounded-lg"&gt;ביטול&lt;/button&gt;&lt;button onClick={() =&gt; { if(!newTaskText.trim())return; onAddTask(child.id, newTaskText, newTaskType); setNewTaskText(""); setIsAdding(false); }} className="flex-1 py-2 bg-blue-600 text-white font-bold rounded-lg hover:bg-blue-700 shadow-md"&gt;שמור&lt;/button&gt;&lt;/div&gt;</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">                            </span>&lt;/div&gt;}</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">                        </span>&lt;/div&gt;</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">                    </span>&lt;/div&gt;</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">                </span>&lt;/div&gt;</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">            </span>);</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">        </span>}</span></p>
-<p dir="rtl" class="p2"><span class="s1"></span><br></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">        </span>function EditChildModal({ childId, initialSettings, currentSettings, onClose, onSave }) {</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">            </span>const [activeTab, setActiveTab] = useState(currentSettings.useImage ? 'image' : currentSettings.useEmoji ? 'emoji' : 'icon');</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">            </span>const [selectedThemeId, setSelectedThemeId] = useState(currentSettings.themeId || initialSettings.theme.id);</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">            </span>const [selectedIconKey, setSelectedIconKey] = useState(currentSettings.iconKey || 'smile');</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">            </span>const [customEmoji, setCustomEmoji] = useState(currentSettings.emoji || '😊');</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">            </span>const [customImage, setCustomImage] = useState(currentSettings.image || null);</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">            </span>const [customName, setCustomName] = useState(currentSettings.name || initialSettings.name);</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">            </span>const [isProcessing, setIsProcessing] = useState(false);</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">            </span>return (</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">                </span>&lt;div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-fade-in"&gt;</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">                    </span>&lt;div className="bg-white w-full max-w-lg rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]"&gt;</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">                        </span>&lt;div className="p-6 border-b border-slate-100 flex justify-between items-center bg-slate-50"&gt;&lt;h3 className="text-xl font-bold text-slate-800"&gt;עריכת פרטי ילד&lt;/h3&gt;&lt;button onClick={onClose} className="p-2 hover:bg-slate-200 rounded-full"&gt;&lt;X className="w-5 h-5" /&gt;&lt;/button&gt;&lt;/div&gt;</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">                        </span>&lt;div className="p-6 overflow-y-auto flex-1"&gt;</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">                            </span>&lt;div className="mb-6"&gt;&lt;h4 className="flex items-center gap-2 font-bold text-slate-700 mb-3"&gt;&lt;Type className="w-5 h-5 text-slate-500" /&gt;שם הילד&lt;/h4&gt;&lt;input type="text" value={customName} onChange={(e) =&gt; setCustomName(e.target.value)} className="w-full p-3 rounded-xl border border-slate-300 text-lg" /&gt;&lt;/div&gt;</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">                            </span>&lt;div className="mb-8"&gt;&lt;h4 className="flex items-center gap-2 font-bold text-slate-700 mb-3"&gt;&lt;Palette className="w-5 h-5 text-purple-500" /&gt;בחר צבע&lt;/h4&gt;&lt;div className="flex flex-wrap gap-3"&gt;{THEMES.map(t =&gt; &lt;button key={t.id} onClick={() =&gt; setSelectedThemeId(t.id)} className={`w-10 h-10 rounded-full border-2 flex items-center justify-center ${t.classes.split(' ')[0]} ${selectedThemeId === t.id ? 'border-slate-800 scale-110 shadow-md ring-2' : 'border-transparent'}`}&gt;{selectedThemeId === t.id &amp;&amp; &lt;Check className={`w-5 h-5 ${t.classes.split(' ')[1]}`} /&gt;}&lt;/button&gt;)}&lt;/div&gt;&lt;/div&gt;</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">                            </span>&lt;div&gt;</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">                                </span>&lt;h4 className="flex items-center gap-2 font-bold text-slate-700 mb-3"&gt;&lt;Smile className="w-5 h-5 text-orange-500" /&gt;סמל / תמונה&lt;/h4&gt;</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">                                </span>&lt;div className="flex bg-slate-100 p-1 rounded-xl mb-4"&gt;&lt;button onClick={() =&gt; setActiveTab('icon')} className={`flex-1 py-2 rounded-lg font-medium ${activeTab==='icon'?'bg-white shadow':''}`}&gt;סמלים&lt;/button&gt;&lt;button onClick={() =&gt; setActiveTab('emoji')} className={`flex-1 py-2 rounded-lg font-medium ${activeTab==='emoji'?'bg-white shadow':''}`}&gt;אימוג'י&lt;/button&gt;&lt;button onClick={() =&gt; setActiveTab('image')} className={`flex-1 py-2 rounded-lg font-medium ${activeTab==='image'?'bg-white shadow':''}`}&gt;תמונה&lt;/button&gt;&lt;/div&gt;</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">                                </span>{activeTab === 'icon' &amp;&amp; &lt;div className="grid grid-cols-5 gap-3"&gt;{Object.entries(ICON_MAP).map(([k, I]) =&gt; &lt;button key={k} onClick={() =&gt; setSelectedIconKey(k)} className={`aspect-square rounded-xl flex items-center justify-center border-2 ${selectedIconKey === k ? 'bg-blue-50 border-blue-500 text-blue-600' : 'bg-white border-slate-200'}`}&gt;&lt;I className="w-6 h-6" /&gt;&lt;/button&gt;)}&lt;/div&gt;}</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">                                </span>{activeTab === 'emoji' &amp;&amp; &lt;div className="flex flex-col items-center p-4 bg-slate-50 rounded-xl border border-slate-200"&gt;&lt;input type="text" value={customEmoji} onChange={(e) =&gt; setCustomEmoji(e.target.value)} className="w-24 h-24 text-center text-6xl rounded-2xl border-2 border-slate-300" maxLength={2} /&gt;&lt;/div&gt;}</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">                                </span>{activeTab === 'image' &amp;&amp; &lt;div className="flex flex-col items-center p-4 bg-slate-50 rounded-xl border border-slate-200"&gt;&lt;div className="relative w-32 h-32 mb-4 group cursor-pointer"&gt;{customImage ? &lt;img src={customImage} className="w-full h-full object-cover rounded-full border-4 border-white shadow-md"/&gt; : &lt;div className="w-full h-full rounded-full bg-slate-200 flex items-center justify-center border-4 border-white"&gt;&lt;ImageIcon className="w-10 h-10 text-slate-400"/&gt;&lt;/div&gt;}&lt;input type="file" className="absolute inset-0 opacity-0 cursor-pointer" accept="image/*" onChange={async(e)=&gt;{ if(e.target.files[0]){ setIsProcessing(true); setCustomImage(await resizeImage(e.target.files[0])); setIsProcessing(false); }}} /&gt;&lt;/div&gt;{isProcessing ? &lt;p className="text-blue-500"&gt;מעבד...&lt;/p&gt; : &lt;p className="text-sm"&gt;לחץ לבחירת תמונה&lt;/p&gt;}&lt;/div&gt;}</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">                            </span>&lt;/div&gt;</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">                        </span>&lt;/div&gt;</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">                        </span>&lt;div className="p-6 border-t border-slate-100 bg-slate-50 flex justify-end gap-3"&gt;&lt;button onClick={onClose} className="px-5 py-2.5 rounded-xl font-bold text-slate-500"&gt;ביטול&lt;/button&gt;&lt;button onClick={() =&gt; handleSave(childId, { themeId: selectedThemeId, useEmoji: activeTab === 'emoji', useImage: activeTab === 'image', iconKey: selectedIconKey, emoji: customEmoji, image: customImage, name: customName })} className="px-8 py-2.5 rounded-xl font-bold text-white bg-blue-600 shadow-lg"&gt;שמור&lt;/button&gt;&lt;/div&gt;</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">                    </span>&lt;/div&gt;</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">                </span>&lt;/div&gt;</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">            </span>);</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">        </span>}</span></p>
-<p dir="rtl" class="p2"><span class="s1"></span><br></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">        </span>function EditFamilyModal({ initialSettings, currentSettings, onClose, onSave }) {</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">            </span>// Simplified version of EditChildModal logic for family settings...</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">            </span>const [activeTab, setActiveTab] = useState(currentSettings.useImage ? 'image' : currentSettings.useEmoji ? 'emoji' : 'icon');</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">            </span>const [selectedThemeId, setSelectedThemeId] = useState(currentSettings.themeId || initialSettings.theme.id);</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">            </span>const [selectedIconKey, setSelectedIconKey] = useState(currentSettings.iconKey || 'trophy');</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">            </span>const [customEmoji, setCustomEmoji] = useState(currentSettings.emoji || '🏆');</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">            </span>const [customImage, setCustomImage] = useState(currentSettings.image || null);</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">            </span>const [customTitle, setCustomTitle] = useState(currentSettings.title || initialSettings.title);</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">            </span>const [customTarget, setCustomTarget] = useState(currentSettings.targetPoints || 100);</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">            </span>const [isProcessing, setIsProcessing] = useState(false);</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">            </span>return (</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">                </span>&lt;div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-fade-in"&gt;</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">                    </span>&lt;div className="bg-white w-full max-w-lg rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]"&gt;</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">                        </span>&lt;div className="p-6 border-b border-slate-100 flex justify-between items-center bg-slate-50"&gt;&lt;h3 className="text-xl font-bold text-slate-800"&gt;עריכת כותרת וסמל&lt;/h3&gt;&lt;button onClick={onClose} className="p-2 hover:bg-slate-200 rounded-full"&gt;&lt;X className="w-5 h-5" /&gt;&lt;/button&gt;&lt;/div&gt;</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">                        </span>&lt;div className="p-6 overflow-y-auto flex-1"&gt;</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">                            </span>&lt;div className="mb-6"&gt;&lt;h4 className="flex items-center gap-2 font-bold text-slate-700 mb-3"&gt;&lt;Type className="w-5 h-5 text-slate-500" /&gt;כותרת&lt;/h4&gt;&lt;input type="text" value={customTitle} onChange={(e) =&gt; setCustomTitle(e.target.value)} className="w-full p-3 rounded-xl border border-slate-300 text-lg" /&gt;&lt;/div&gt;</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">                            </span>&lt;div className="mb-6"&gt;&lt;h4 className="flex items-center gap-2 font-bold text-slate-700 mb-3"&gt;&lt;Target className="w-5 h-5 text-slate-500" /&gt;יעד נקודות&lt;/h4&gt;&lt;input type="number" value={customTarget} onChange={(e) =&gt; setCustomTarget(e.target.value)} className="w-full p-3 rounded-xl border border-slate-300 text-lg" /&gt;&lt;/div&gt;</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">                            </span>&lt;div className="mb-8"&gt;&lt;h4 className="flex items-center gap-2 font-bold text-slate-700 mb-3"&gt;&lt;Palette className="w-5 h-5 text-purple-500" /&gt;צבע&lt;/h4&gt;&lt;div className="flex flex-wrap gap-3"&gt;{THEMES.map(t =&gt; &lt;button key={t.id} onClick={() =&gt; setSelectedThemeId(t.id)} className={`w-10 h-10 rounded-full border-2 flex items-center justify-center ${t.classes.split(' ')[0]} ${selectedThemeId === t.id ? 'border-slate-800 scale-110 shadow-md ring-2' : 'border-transparent'}`}&gt;{selectedThemeId === t.id &amp;&amp; &lt;Check className={`w-5 h-5 ${t.classes.split(' ')[1]}`} /&gt;}&lt;/button&gt;)}&lt;/div&gt;&lt;/div&gt;</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">                            </span>&lt;div&gt;</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">                                </span>&lt;h4 className="flex items-center gap-2 font-bold text-slate-700 mb-3"&gt;&lt;Smile className="w-5 h-5 text-orange-500" /&gt;סמל&lt;/h4&gt;</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">                                </span>&lt;div className="flex bg-slate-100 p-1 rounded-xl mb-4"&gt;&lt;button onClick={() =&gt; setActiveTab('icon')} className={`flex-1 py-2 rounded-lg font-medium ${activeTab==='icon'?'bg-white shadow':''}`}&gt;סמלים&lt;/button&gt;&lt;button onClick={() =&gt; setActiveTab('emoji')} className={`flex-1 py-2 rounded-lg font-medium ${activeTab==='emoji'?'bg-white shadow':''}`}&gt;אימוג'י&lt;/button&gt;&lt;button onClick={() =&gt; setActiveTab('image')} className={`flex-1 py-2 rounded-lg font-medium ${activeTab==='image'?'bg-white shadow':''}`}&gt;תמונה&lt;/button&gt;&lt;/div&gt;</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">                                </span>{activeTab === 'icon' &amp;&amp; &lt;div className="grid grid-cols-5 gap-3"&gt;{Object.entries(ICON_MAP).map(([k, I]) =&gt; &lt;button key={k} onClick={() =&gt; setSelectedIconKey(k)} className={`aspect-square rounded-xl flex items-center justify-center border-2 ${selectedIconKey === k ? 'bg-blue-50 border-blue-500 text-blue-600' : 'bg-white border-slate-200'}`}&gt;&lt;I className="w-6 h-6" /&gt;&lt;/button&gt;)}&lt;/div&gt;}</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">                                </span>{activeTab === 'emoji' &amp;&amp; &lt;div className="flex flex-col items-center p-4 bg-slate-50 rounded-xl border border-slate-200"&gt;&lt;input type="text" value={customEmoji} onChange={(e) =&gt; setCustomEmoji(e.target.value)} className="w-24 h-24 text-center text-6xl rounded-2xl border-2 border-slate-300" maxLength={2} /&gt;&lt;/div&gt;}</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">                                </span>{activeTab === 'image' &amp;&amp; &lt;div className="flex flex-col items-center p-4 bg-slate-50 rounded-xl border border-slate-200"&gt;&lt;div className="relative w-32 h-32 mb-4 group cursor-pointer"&gt;{customImage ? &lt;img src={customImage} className="w-full h-full object-cover rounded-full border-4 border-white shadow-md"/&gt; : &lt;div className="w-full h-full rounded-full bg-slate-200 flex items-center justify-center border-4 border-white"&gt;&lt;ImageIcon className="w-10 h-10 text-slate-400"/&gt;&lt;/div&gt;}&lt;input type="file" className="absolute inset-0 opacity-0 cursor-pointer" accept="image/*" onChange={async(e)=&gt;{ if(e.target.files[0]){ setIsProcessing(true); setCustomImage(await resizeImage(e.target.files[0])); setIsProcessing(false); }}} /&gt;&lt;/div&gt;{isProcessing ? &lt;p className="text-blue-500"&gt;מעבד...&lt;/p&gt; : &lt;p className="text-sm"&gt;לחץ לבחירת תמונה&lt;/p&gt;}&lt;/div&gt;}</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">                            </span>&lt;/div&gt;</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">                        </span>&lt;/div&gt;</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">                        </span>&lt;div className="p-6 border-t border-slate-100 bg-slate-50 flex justify-end gap-3"&gt;&lt;button onClick={onClose} className="px-5 py-2.5 rounded-xl font-bold text-slate-500"&gt;ביטול&lt;/button&gt;&lt;button onClick={() =&gt; onSave({ themeId: selectedThemeId, useEmoji: activeTab === 'emoji', useImage: activeTab === 'image', iconKey: selectedIconKey, emoji: customEmoji, image: customImage, title: customTitle, targetPoints: Number(customTarget) })} className="px-8 py-2.5 rounded-xl font-bold text-white bg-blue-600 shadow-lg"&gt;שמור&lt;/button&gt;&lt;/div&gt;</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">                    </span>&lt;/div&gt;</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">                </span>&lt;/div&gt;</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">            </span>);</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">        </span>}</span></p>
-<p dir="rtl" class="p2"><span class="s1"></span><br></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">        </span>const root = createRoot(document.getElementById('root'));</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">        </span>root.render(&lt;App /&gt;);</span></p>
-<p dir="rtl" class="p1"><span class="s1"><span class="Apple-converted-space">    </span>&lt;/script&gt;</span></p>
-<p dir="rtl" class="p1"><span class="s1">&lt;/body&gt;</span></p>
-<p dir="rtl" class="p1"><span class="s1">&lt;/html&gt;</span></p>
-</body>
-</html>
+    <div id="root"></div>
+
+    <script type="text/babel" data-type="module">
+        import React, { useState, useEffect, useRef } from 'react';
+        import { createRoot } from 'react-dom/client';
+        import { initializeApp } from 'firebase/app';
+        import { getAuth, signInAnonymously, onAuthStateChanged } from 'firebase/auth';
+        import { getFirestore, collection, doc, onSnapshot, setDoc, updateDoc, increment } from 'firebase/firestore';
+        import { Check, Star, Trophy, Plus, Minus, X, Sparkles, Utensils, Shirt, Gamepad2, Trash2, Home, Settings, Smile, Heart, Sun, Moon, Music, Book, Bike, Car, Cat, Dog, Flower, Palette, Camera, Upload, Image as ImageIcon, Type, Calendar, Repeat, CalendarDays, RotateCcw, Target } from 'lucide-react';
+
+        // --- YOUR KEYS ---
+        const firebaseConfig = {
+            apiKey: "AIzaSyCET42vMcj1uC0nMsqsWy2xd-yv1WC7e68",
+            authDomain: "family-tasks-ee68f.firebaseapp.com",
+            projectId: "family-tasks-ee68f",
+            storageBucket: "family-tasks-ee68f.firebasestorage.app",
+            messagingSenderId: "579816138584",
+            appId: "1:579816138584:web:1b2a3cbf4c5fd00a45e72d"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+        const appId = 'family-app-main'; 
+
+        const ICON_MAP = {
+            'trophy': Trophy, 'utensils': Utensils, 'shirt': Shirt, 'gamepad': Gamepad2,
+            'home': Home, 'star': Star, 'heart': Heart, 'smile': Smile, 'sun': Sun,
+            'moon': Moon, 'music': Music, 'book': Book, 'bike': Bike, 'car': Car,
+            'cat': Cat, 'dog': Dog, 'flower': Flower, 'camera': Camera, 'sparkles': Sparkles
+        };
+
+        const THEMES = [
+            { id: 'pink', name: 'ורוד', classes: 'bg-pink-100 text-pink-700 border-pink-300', iconBg: 'bg-pink-200', iconText: 'text-pink-600' },
+            { id: 'blue', name: 'כחול', classes: 'bg-blue-100 text-blue-700 border-blue-300', iconBg: 'bg-blue-200', iconText: 'text-blue-600' },
+            { id: 'green', name: 'ירוק', classes: 'bg-green-100 text-green-700 border-green-300', iconBg: 'bg-green-200', iconText: 'text-green-600' },
+            { id: 'purple', name: 'סגול', classes: 'bg-purple-100 text-purple-700 border-purple-300', iconBg: 'bg-purple-200', iconText: 'text-purple-600' },
+            { id: 'yellow', name: 'צהוב', classes: 'bg-yellow-100 text-yellow-700 border-yellow-300', iconBg: 'bg-yellow-200', iconText: 'text-yellow-600' },
+            { id: 'orange', name: 'כתום', classes: 'bg-orange-100 text-orange-700 border-orange-300', iconBg: 'bg-orange-200', iconText: 'text-orange-600' },
+            { id: 'teal', name: 'טורקיז', classes: 'bg-teal-100 text-teal-700 border-teal-300', iconBg: 'bg-teal-200', iconText: 'text-teal-600' },
+            { id: 'red', name: 'אדום', classes: 'bg-red-100 text-red-700 border-red-300', iconBg: 'bg-red-200', iconText: 'text-red-600' },
+        ];
+
+        const CHILDREN_DEFAULTS = [
+            { id: 'mushka', name: 'חיה מושקא', defaultThemeId: 'yellow', defaultIconKey: 'home', initialTasks: [{ id: 'def_mushka_1', text: 'רצפה', type: 'daily' }] },
+            { id: 'dvora', name: 'דבורה לאה', defaultThemeId: 'pink', defaultIconKey: 'utensils', initialTasks: [{ id: 'def_dvora_1', text: 'כלים חלבי ושיש', type: 'daily' }] },
+            { id: 'rivka', name: 'רבקה', defaultThemeId: 'purple', defaultIconKey: 'utensils', initialTasks: [{ id: 'def_rivka_1', text: 'לפנות שולחן', type: 'daily' }, { id: 'def_rivka_2', text: 'לערוך לארוחת ערב', type: 'daily' }] },
+            { id: 'shmuel', name: 'שמואל', defaultThemeId: 'blue', defaultIconKey: 'shirt', initialTasks: [{ id: 'def_shmuel_1', text: 'לפנות את הספה', type: 'daily' }, { id: 'def_shmuel_2', text: 'לאסוף בגדים מלוכלכים לכביסה', type: 'daily' }] },
+            { id: 'pitzo', name: 'יוסף יצחק', defaultThemeId: 'green', defaultIconKey: 'gamepad', initialTasks: [{ id: 'def_pitzo_1', text: 'לאסוף משחקים', type: 'daily' }, { id: 'def_pitzo_2', text: 'לאסוף נעליים', type: 'daily' }] }
+        ];
+
+        const FAMILY_DEFAULT = { defaultThemeId: 'yellow', defaultIconKey: 'trophy', defaultTitle: 'המבצע המשפחתי', defaultTarget: 100 };
+
+        const toHebrewNumeral = (n) => {
+            if (!n || n < 1 || n > 31) return n;
+            const letters = ['', 'א׳', 'ב׳', 'ג׳', 'ד׳', 'ה׳', 'ו׳', 'ז׳', 'ח׳', 'ט׳', 'י׳', 'י״א', 'י״ב', 'י״ג', 'י״ד', 'ט״ו', 'ט״ז', 'י״ז', 'י״ח', 'י״ט', 'כ׳', 'כ״א', 'כ״ב', 'כ״ג', 'כ״ד', 'כ״ה', 'כ״ו', 'כ״ז', 'כ״ח', 'כ״ט', 'ל׳', 'ל״א'];
+            return letters[n] || n;
+        };
+
+        const resizeImage = (file) => {
+            return new Promise((resolve) => {
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    const img = new Image();
+                    img.onload = () => {
+                        const canvas = document.createElement('canvas');
+                        const MAX_WIDTH = 300; const MAX_HEIGHT = 300;
+                        let width = img.width; let height = img.height;
+                        if (width > height) { if (width > MAX_WIDTH) { height *= MAX_WIDTH / width; width = MAX_WIDTH; } } 
+                        else { if (height > MAX_HEIGHT) { width *= MAX_HEIGHT / height; height = MAX_HEIGHT; } }
+                        canvas.width = width; canvas.height = height;
+                        const ctx = canvas.getContext('2d');
+                        ctx.drawImage(img, 0, 0, width, height);
+                        resolve(canvas.toDataURL('image/jpeg', 0.7));
+                    };
+                    img.src = event.target.result;
+                };
+                reader.readAsDataURL(file);
+            });
+        };
+
+        function Confetti({ density = 150 }) {
+            const canvasRef = useRef(null);
+            useEffect(() => {
+                const canvas = canvasRef.current;
+                if (!canvas) return;
+                const ctx = canvas.getContext('2d');
+                const updateSize = () => { canvas.width = window.innerWidth; canvas.height = window.innerHeight; };
+                updateSize();
+                window.addEventListener('resize', updateSize);
+                const colors = ['#FCD34D', '#F87171', '#60A5FA', '#34D399', '#A78BFA', '#F472B6'];
+                const particles = Array.from({ length: density }).map(() => ({
+                    x: Math.random() * canvas.width, y: -Math.random() * canvas.height,
+                    color: colors[Math.floor(Math.random() * colors.length)],
+                    size: Math.random() * 8 + 4, weight: Math.random() * 3 + 2,
+                    angle: Math.random() * 360, spin: Math.random() * 5 - 2.5, oscillationSpeed: Math.random() * 0.05 + 0.02
+                }));
+                let animationId;
+                function animate() {
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+                    particles.forEach(p => {
+                        p.y += p.weight; p.angle += p.spin; p.x += Math.sin(p.angle * p.oscillationSpeed) * 2;
+                        if (p.y > canvas.height) { p.y = -10; p.x = Math.random() * canvas.width; }
+                        ctx.save(); ctx.translate(p.x, p.y); ctx.rotate(p.angle * Math.PI / 180);
+                        ctx.fillStyle = p.color; ctx.fillRect(-p.size / 2, -p.size / 2, p.size, p.size); ctx.restore();
+                    });
+                    animationId = requestAnimationFrame(animate);
+                }
+                animate();
+                return () => { cancelAnimationFrame(animationId); window.removeEventListener('resize', updateSize); };
+            }, [density]);
+            return <canvas ref={canvasRef} className="fixed inset-0 pointer-events-none z-[100]" />;
+        }
+
+        function App() {
+            const [user, setUser] = useState(null);
+            const [points, setPoints] = useState(0);
+            const [completedTasks, setCompletedTasks] = useState({}); 
+            const [childSettings, setChildSettings] = useState({}); 
+            const [familySettings, setFamilySettings] = useState({}); 
+            const [tasksData, setTasksData] = useState({});
+            
+            const [selectedChild, setSelectedChild] = useState(null);
+            const [editingChildId, setEditingChildId] = useState(null);
+            const [showFamilyEditModal, setShowFamilyEditModal] = useState(false);
+            const [showBonusModal, setShowBonusModal] = useState(false);
+            const [showWinModal, setShowWinModal] = useState(false);
+            const [animationClass, setAnimationClass] = useState('');
+            const [showConfetti, setShowConfetti] = useState(false);
+            const confettiTimeoutRef = useRef(null);
+            
+            const [currentDate, setCurrentDate] = useState('');
+            const [hebrewDate, setHebrewDate] = useState('');
+            const targetPoints = familySettings.targetPoints || FAMILY_DEFAULT.defaultTarget;
+
+            const longPressTimer = useRef(null);
+            const isLongPress = useRef(false);
+            const createLongPressHandlers = (callback, onClick) => ({
+                onMouseDown: () => { isLongPress.current = false; longPressTimer.current = setTimeout(() => { isLongPress.current = true; callback(); }, 800); },
+                onMouseUp: (e) => { if (longPressTimer.current) clearTimeout(longPressTimer.current); if (!isLongPress.current && onClick) onClick(e); },
+                onMouseLeave: () => { if (longPressTimer.current) clearTimeout(longPressTimer.current); },
+                onTouchStart: () => { isLongPress.current = false; longPressTimer.current = setTimeout(() => { isLongPress.current = true; callback(); }, 800); },
+                onTouchEnd: (e) => { if (longPressTimer.current) clearTimeout(longPressTimer.current); if (isLongPress.current) e.preventDefault(); if (!isLongPress.current && onClick) onClick(e); }
+            });
+
+            useEffect(() => {
+                const initAuth = async () => { await signInAnonymously(auth); };
+                initAuth();
+                const unsubscribe = onAuthStateChanged(auth, setUser);
+                
+                const now = new Date();
+                setCurrentDate(now.toLocaleDateString('he-IL', { weekday: 'long', year: 'numeric', month: 'numeric', day: 'numeric' }));
+                try {
+                    const parts = new Intl.DateTimeFormat('he-IL', { calendar: 'hebrew', day: 'numeric', month: 'long', year: 'numeric' }).formatToParts(now);
+                    const day = parts.find(p => p.type === 'day')?.value;
+                    const month = parts.find(p => p.type === 'month')?.value;
+                    const year = parts.find(p => p.type === 'year')?.value;
+                    if (day && month && year) { setHebrewDate(`${toHebrewNumeral(parseInt(day, 10))} ${month} ${year}`); }
+                } catch (e) { console.log("Hebrew calendar error", e); }
+                return () => unsubscribe();
+            }, []);
+
+            useEffect(() => {
+                if (!user) return;
+                const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'family_project_v1', 'status');
+                const unsubscribe = onSnapshot(docRef, (docSnap) => {
+                    if (docSnap.exists()) {
+                        const data = docSnap.data();
+                        setPoints(Number(data.points) || 0);
+                        setCompletedTasks(data.completedTasks || {});
+                        setChildSettings(data.childSettings || {});
+                        setFamilySettings(data.familySettings || {});
+                        setTasksData(data.childTasks || {});
+                    } else {
+                        setDoc(docRef, { points: 0, completedTasks: {}, childSettings: {}, familySettings: {}, childTasks: {} });
+                    }
+                });
+                return () => unsubscribe();
+            }, [user]);
+
+            useEffect(() => { if (points >= targetPoints && points > 0) setShowWinModal(true); }, [points, targetPoints]);
+
+            const getTodayKey = () => { const d = new Date(); return `${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}`; };
+            
+            const getChildVisuals = (childId) => {
+                const def = CHILDREN_DEFAULTS.find(c => c.id === childId);
+                const s = childSettings[childId] || {};
+                const theme = THEMES.find(t => t.id === (s.themeId || def.defaultThemeId)) || THEMES[0];
+                const Icon = ICON_MAP[s.iconKey || def.defaultIconKey] || Smile;
+                return { ...s, theme, IconComponent: Icon, name: s.name || def.name, emoji: s.emoji || '😊' };
+            };
+
+            const getChildTasks = (childId) => {
+                if (tasksData[childId]) {
+                    const today = getTodayKey(); const day = new Date().getDay(); 
+                    return tasksData[childId].filter(t => t.type === 'daily' || (t.type === 'one-time' && t.date === today) || (t.type === 'friday' && day === 5));
+                }
+                return CHILDREN_DEFAULTS.find(c => c.id === childId)?.initialTasks || [];
+            };
+
+            const triggerConfetti = () => {
+                setAnimationClass('scale-110'); setTimeout(() => setAnimationClass(''), 200);
+                setShowConfetti(true); if (confettiTimeoutRef.current) clearTimeout(confettiTimeoutRef.current);
+                confettiTimeoutRef.current = setTimeout(() => setShowConfetti(false), 3000); 
+            };
+
+            const handleTaskToggle = async (childId, taskId) => {
+                if (!user) return;
+                const key = `${getTodayKey()}_${childId}_${taskId}`;
+                const isDone = completedTasks[key];
+                const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'family_project_v1', 'status');
+                triggerConfetti();
+                await updateDoc(docRef, { points: increment(isDone ? -1 : 1), [`completedTasks.${key}`]: !isDone });
+            };
+
+            const handleSaveFamilySettings = async (s) => {
+                if (!user) return;
+                await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'family_project_v1', 'status'), { familySettings: s });
+                setShowFamilyEditModal(false);
+            };
+
+            const progressPercent = Math.min((points / targetPoints) * 100, 100);
+            const fam = (() => {
+                const s = familySettings || {};
+                const theme = THEMES.find(t => t.id === (s.themeId || FAMILY_DEFAULT.defaultThemeId)) || THEMES[0];
+                const Icon = ICON_MAP[s.iconKey || FAMILY_DEFAULT.defaultIconKey] || Trophy;
+                return { ...s, theme, IconComponent: Icon, title: s.title || FAMILY_DEFAULT.defaultTitle, emoji: s.emoji || '🏆' };
+            })();
+
+            return (
+                <div className="min-h-screen bg-slate-50 font-sans text-slate-800" dir="rtl">
+                    {(showConfetti || showWinModal) && <Confetti density={showWinModal ? 400 : 150} />}
+
+                    <header className="bg-white shadow-lg p-6 sticky top-0 z-10">
+                        <div className="max-w-6xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
+                            <div className="flex items-center gap-3 select-none">
+                                <div className={`p-3 rounded-full cursor-pointer transition-transform active:scale-95 ${fam.theme.classes.split(' ')[0]} ${fam.theme.classes.split(' ')[2].replace('border', 'border-2')}`} {...createLongPressHandlers(() => setShowFamilyEditModal(true))}>
+                                    <div className="w-8 h-8 flex items-center justify-center overflow-hidden rounded-full">
+                                        {fam.useImage && fam.image ? <img src={fam.image} className="w-full h-full object-cover"/> : fam.useEmoji ? <span className="text-2xl leading-none">{fam.emoji}</span> : <fam.IconComponent className={`w-8 h-8 ${fam.theme.iconText}`} />}
+                                    </div>
+                                </div>
+                                <div>
+                                    <h1 className="text-2xl font-bold text-slate-800 cursor-pointer" {...createLongPressHandlers(() => setShowFamilyEditModal(true))}>{fam.title}</h1>
+                                    <div className="text-slate-500 text-sm flex gap-2"><span>{currentDate}</span>{hebrewDate && <span className="border-r border-slate-300 pr-2">{hebrewDate}</span>}</div>
+                                </div>
+                            </div>
+                            <div className="flex-1 w-full md:w-auto md:mx-8">
+                                <div className="flex justify-between mb-2 text-lg font-bold"><span className={`transition-transform duration-300 ${animationClass} text-blue-600`}>{points} נקודות</span><span className="text-slate-400">יעד: {targetPoints}</span></div>
+                                <div className="h-6 w-full bg-slate-200 rounded-full overflow-hidden shadow-inner">
+                                    <div className="h-full bg-gradient-to-r from-blue-500 to-purple-500 transition-all duration-700 ease-out flex items-center justify-center relative" style={{ width: `${progressPercent}%` }}>
+                                        {progressPercent > 10 && <div className="absolute left-0 top-0 bottom-0 w-full animate-[shimmer_2s_infinite] bg-gradient-to-r from-transparent via-white/20 to-transparent -skew-x-12"></div>}
+                                    </div>
+                                </div>
+                            </div>
+                            <button onClick={() => setShowBonusModal(true)} className="flex items-center gap-2 bg-gradient-to-r from-orange-400 to-red-500 text-white px-6 py-3 rounded-xl font-bold shadow-md hover:shadow-lg transform active:scale-95 transition-all"><Sparkles className="w-5 h-5" /><span>בונוס</span></button>
+                        </div>
+                    </header>
+
+                    <main className="max-w-6xl mx-auto p-6">
+                        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-6 mt-4">
+                            {CHILDREN_DEFAULTS.map((child) => {
+                                const v = getChildVisuals(child.id);
+                                const tasks = getChildTasks(child.id);
+                                const doneCount = tasks.filter(t => completedTasks[`${getTodayKey()}_${child.id}_${t.id}`]).length;
+                                return (
+                                    <div key={child.id} className={`group relative bg-white rounded-3xl p-6 border-4 ${v.theme.classes.split(' ')[2]} shadow-md hover:shadow-xl hover:-translate-y-2 transition-all duration-300 flex flex-col items-center justify-center gap-4 h-64 select-none`}
+                                        {...createLongPressHandlers(() => setEditingChildId(child.id), () => setSelectedChild(child))}>
+                                        <button onClick={(e) => { e.stopPropagation(); setEditingChildId(child.id); }} className="absolute top-2 right-2 p-2 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-400 opacity-0 group-hover:opacity-100 transition-opacity"><Settings className="w-4 h-4" /></button>
+                                        <div className={`w-24 h-24 rounded-full ${v.theme.iconBg} flex items-center justify-center shadow-inner group-hover:scale-110 transition-transform overflow-hidden`}>
+                                            {v.useImage && v.image ? <img src={v.image} className="w-full h-full object-cover"/> : v.useEmoji ? <span className="text-5xl leading-none">{v.emoji}</span> : <v.IconComponent className={`w-10 h-10 ${v.theme.iconText}`} />}
+                                        </div>
+                                        <h2 className="text-2xl font-bold text-center mt-4">{v.name}</h2>
+                                        <div className="flex gap-1 mt-2">{tasks.map(t => <div key={t.id} className={`w-3 h-3 rounded-full ${completedTasks[`${getTodayKey()}_${child.id}_${t.id}`] ? 'bg-green-500' : 'bg-slate-200'}`} />)}</div>
+                                        <div className="absolute top-4 left-4 bg-slate-100 rounded-full p-1 opacity-0 group-hover:opacity-100 pointer-events-none"><Plus className="w-5 h-5 text-slate-400" /></div>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    </main>
+
+                    {selectedChild && <TaskModal child={selectedChild} tasks={getChildTasks(selectedChild.id)} completedTasks={completedTasks} visuals={getChildVisuals(selectedChild.id)} onToggleTask={handleTaskToggle} onClose={() => setSelectedChild(null)} onAddTask={(cid, txt, type) => {
+                        const newT = { id: `custom_${Date.now()}`, text: txt, type, date: getTodayKey() };
+                        updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'family_project_v1', 'status'), { childTasks: { ...tasksData, [cid]: [...getChildTasks(cid), newT] } });
+                    }} onDeleteTask={(cid, tid) => {
+                        updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'family_project_v1', 'status'), { childTasks: { ...tasksData, [cid]: getChildTasks(cid).filter(t => t.id !== tid) } });
+                    }} getTodayKey={getTodayKey} />}
+                    
+                    {editingChildId && <EditChildModal childId={editingChildId} initialSettings={getChildVisuals(editingChildId)} currentSettings={childSettings[editingChildId] || {}} onClose={() => setEditingChildId(null)} onSave={async (cid, s) => {
+                        await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'family_project_v1', 'status'), { childSettings: { ...childSettings, [cid]: { ...childSettings[cid], ...s } } });
+                        setEditingChildId(null);
+                    }} />}
+
+                    {showFamilyEditModal && <EditFamilyModal initialSettings={fam} currentSettings={familySettings} onClose={() => setShowFamilyEditModal(false)} onSave={handleSaveFamilySettings} />}
+
+                    {showBonusModal && <BonusModal onClose={() => setShowBonusModal(false)} onConfirm={async (amt) => { triggerConfetti(); await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'family_project_v1', 'status'), { points: increment(amt) }); setShowBonusModal(false); }} />}
+
+                    {showWinModal && (
+                        <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-black/60 backdrop-blur-md animate-fade-in">
+                            <div className="bg-white w-full max-w-lg rounded-[2.5rem] shadow-2xl p-8 text-center animate-scale-up border-8 border-yellow-300 relative overflow-hidden">
+                                <div className="absolute top-0 left-0 w-full h-32 bg-yellow-100 rounded-b-[50%] -translate-y-16"></div>
+                                <div className="relative z-10">
+                                    <div className="mx-auto w-32 h-32 bg-gradient-to-b from-yellow-300 to-yellow-500 rounded-full flex items-center justify-center mb-6 shadow-xl border-4 border-white animate-bounce"><Trophy className="w-16 h-16 text-white drop-shadow-md" /></div>
+                                    <h2 className="text-5xl font-black text-slate-800 mb-2">כל הכבוד!</h2>
+                                    <h3 className="text-2xl font-bold text-slate-600 mb-6">הגעתם ליעד של {targetPoints} נקודות!</h3>
+                                    <button onClick={async () => { await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'family_project_v1', 'status'), { points: 0 }); setShowWinModal(false); }} className="w-full py-4 rounded-2xl bg-gradient-to-r from-blue-500 to-blue-600 text-white font-bold text-xl shadow-xl flex items-center justify-center gap-2"><RotateCcw className="w-6 h-6"/>אפס נקודות והתחל מחדש</button>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+                    <style>{`@keyframes shimmer { 0% { transform: translateX(-150%); } 50% { transform: translateX(150%); } 100% { transform: translateX(150%); } } @keyframes fade-in { from { opacity: 0; } to { opacity: 1; } } @keyframes slide-up { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } } @keyframes scale-up { from { opacity: 0; transform: scale(0.9); } to { opacity: 1; transform: scale(1); } } .animate-fade-in { animation: fade-in 0.2s ease-out; } .animate-slide-up { animation: slide-up 0.3s cubic-bezier(0.16, 1, 0.3, 1); } .animate-scale-up { animation: scale-up 0.2s cubic-bezier(0.16, 1, 0.3, 1); }`}</style>
+                </div>
+            );
+        }
+
+        // --- SUB COMPONENTS ---
+        function BonusModal({ onClose, onConfirm }) {
+            const [amount, setAmount] = useState(1);
+            return (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm animate-fade-in">
+                    <div className="bg-white w-full max-w-md rounded-3xl shadow-2xl p-6 text-center animate-scale-up">
+                        <div className="mx-auto w-16 h-16 bg-gradient-to-br from-orange-400 to-red-500 rounded-full flex items-center justify-center mb-4 shadow-lg"><Sparkles className="w-8 h-8 text-white" /></div>
+                        <h3 className="text-2xl font-bold text-slate-800 mb-2">הוספת בונוס</h3>
+                        <div className="flex items-center justify-center gap-4 mb-8">
+                            <button onClick={() => setAmount(Math.max(1, amount - 1))} className="w-12 h-12 rounded-full bg-slate-100 flex items-center justify-center"><Minus className="w-6 h-6" /></button>
+                            <div className="text-6xl font-black text-transparent bg-clip-text bg-gradient-to-r from-orange-500 to-red-600 w-24 tabular-nums">{amount}</div>
+                            <button onClick={() => setAmount(Math.min(10, amount + 1))} className="w-12 h-12 rounded-full bg-slate-100 flex items-center justify-center"><Plus className="w-6 h-6" /></button>
+                        </div>
+                        <div className="flex gap-4 justify-center"><button onClick={onClose} className="px-6 py-3 rounded-xl border-2 border-slate-200">ביטול</button><button onClick={() => onConfirm(amount)} className="px-8 py-3 rounded-xl bg-gradient-to-r from-orange-400 to-red-500 text-white font-bold">הוסף!</button></div>
+                    </div>
+                </div>
+            );
+        }
+
+        function TaskModal({ child, tasks, completedTasks, visuals, onToggleTask, onClose, onAddTask, onDeleteTask, getTodayKey }) {
+            const { theme, IconComponent, useEmoji, emoji, useImage, image, name } = visuals;
+            const [isAdding, setIsAdding] = useState(false);
+            const [newTaskText, setNewTaskText] = useState("");
+            const [newTaskType, setNewTaskType] = useState("daily");
+            return (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm animate-fade-in">
+                    <div className="bg-white w-full max-w-lg rounded-3xl shadow-2xl overflow-hidden animate-slide-up flex flex-col max-h-[90vh]" onClick={(e) => e.stopPropagation()}>
+                        <div className={`${theme.iconBg} p-6 flex items-center justify-between flex-shrink-0`}>
+                            <div className="flex items-center gap-4">
+                                <div className="bg-white/50 p-1 rounded-full flex items-center justify-center w-16 h-16 overflow-hidden border-2 border-white/50">{useImage && image ? <img src={image} className="w-full h-full object-cover rounded-full" /> : useEmoji ? <span className="text-3xl">{emoji}</span> : <IconComponent className={`w-8 h-8 ${theme.iconText}`} />}</div>
+                                <div><h2 className="text-3xl font-bold text-slate-800">{name}</h2><p className="text-slate-600 text-lg">המשימות להיום</p></div>
+                            </div>
+                            <button onClick={onClose} className="bg-white/50 p-2 rounded-full"><X className="w-6 h-6 text-slate-700" /></button>
+                        </div>
+                        <div className="p-8 space-y-4 overflow-y-auto flex-1">
+                            {tasks.map((task) => {
+                                const isDone = completedTasks[`${getTodayKey()}_${child.id}_${task.id}`];
+                                return (
+                                    <div key={task.id} className="relative group">
+                                        <button onClick={() => onToggleTask(child.id, task.id)} className={`w-full flex items-center justify-between p-5 rounded-2xl border-2 transition-all duration-200 ${isDone ? 'bg-green-50 border-green-200 shadow-none' : 'bg-white border-slate-100 shadow-md'}`}>
+                                            <div className="flex items-center gap-3">{task.type==='one-time'?<Calendar className="w-4 h-4 text-blue-400"/>:task.type==='daily'?<Repeat className="w-4 h-4 text-purple-400"/>:<CalendarDays className="w-4 h-4 text-pink-400"/>}<span className={`text-xl font-medium ${isDone ? 'text-green-800 line-through opacity-70' : 'text-slate-700'}`}>{task.text}</span></div>
+                                            <div className={`w-10 h-10 rounded-full flex items-center justify-center border-2 transition-all ${isDone ? 'bg-green-500 border-green-500 scale-110' : 'bg-white border-slate-300'}`}>{isDone && <Check className="w-6 h-6 text-white" />}</div>
+                                        </button>
+                                        <button onClick={(e) => { e.stopPropagation(); onDeleteTask(child.id, task.id); }} className="absolute -left-2 top-1/2 -translate-y-1/2 -translate-x-full p-2 bg-red-100 text-red-500 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"><Trash2 className="w-5 h-5" /></button>
+                                    </div>
+                                );
+                            })}
+                            {tasks.length > 0 && tasks.every((t) => completedTasks[`${getTodayKey()}_${child.id}_${t.id}`]) && <div className="mt-6 text-center bg-yellow-50 p-4 rounded-xl border border-yellow-200 text-yellow-800 animate-pulse"><Star className="w-8 h-8 mx-auto mb-2 text-yellow-500 fill-yellow-500" /><p className="font-bold text-lg">כל הכבוד! סיימת את כל המשימות להיום!</p></div>}
+                        </div>
+                        <div className="p-4 border-t border-slate-100 bg-slate-50">
+                            {!isAdding ? <button onClick={() => setIsAdding(true)} className="w-full py-3 rounded-xl border-2 border-dashed border-slate-300 text-slate-500 font-bold hover:bg-white flex items-center justify-center gap-2"><Plus className="w-5 h-5" />הוסף משימה חדשה</button> : 
+                            <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm animate-fade-in">
+                                <input type="text" placeholder="שם המשימה..." value={newTaskText} onChange={(e) => setNewTaskText(e.target.value)} className="w-full p-3 rounded-lg border border-slate-300 mb-3" autoFocus />
+                                <div className="flex gap-2 mb-3">
+                                    <button onClick={() => setNewTaskType('daily')} className={`flex-1 py-2 rounded-lg text-sm font-bold border ${newTaskType==='daily'?'bg-purple-100 text-purple-700 border-purple-300':'bg-slate-50 border-slate-200'}`}>כל יום</button>
+                                    <button onClick={() => setNewTaskType('friday')} className={`flex-1 py-2 rounded-lg text-sm font-bold border ${newTaskType==='friday'?'bg-pink-100 text-pink-700 border-pink-300':'bg-slate-50 border-slate-200'}`}>יום שישי</button>
+                                    <button onClick={() => setNewTaskType('one-time')} className={`flex-1 py-2 rounded-lg text-sm font-bold border ${newTaskType==='one-time'?'bg-blue-100 text-blue-700 border-blue-300':'bg-slate-50 border-slate-200'}`}>רק להיום</button>
+                                </div>
+                                <div className="flex gap-2"><button onClick={() => setIsAdding(false)} className="flex-1 py-2 text-slate-500 font-bold hover:bg-slate-100 rounded-lg">ביטול</button><button onClick={() => { if(!newTaskText.trim())return; onAddTask(child.id, newTaskText, newTaskType); setNewTaskText(""); setIsAdding(false); }} className="flex-1 py-2 bg-blue-600 text-white font-bold rounded-lg hover:bg-blue-700 shadow-md">שמור</button></div>
+                            </div>}
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+
+        function EditChildModal({ childId, initialSettings, currentSettings, onClose, onSave }) {
+            const [activeTab, setActiveTab] = useState(currentSettings.useImage ? 'image' : currentSettings.useEmoji ? 'emoji' : 'icon');
+            const [selectedThemeId, setSelectedThemeId] = useState(currentSettings.themeId || initialSettings.theme.id);
+            const [selectedIconKey, setSelectedIconKey] = useState(currentSettings.iconKey || 'smile');
+            const [customEmoji, setCustomEmoji] = useState(currentSettings.emoji || '😊');
+            const [customImage, setCustomImage] = useState(currentSettings.image || null);
+            const [customName, setCustomName] = useState(currentSettings.name || initialSettings.name);
+            const [isProcessing, setIsProcessing] = useState(false);
+            return (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-fade-in">
+                    <div className="bg-white w-full max-w-lg rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
+                        <div className="p-6 border-b border-slate-100 flex justify-between items-center bg-slate-50"><h3 className="text-xl font-bold text-slate-800">עריכת פרטי ילד</h3><button onClick={onClose} className="p-2 hover:bg-slate-200 rounded-full"><X className="w-5 h-5" /></button></div>
+                        <div className="p-6 overflow-y-auto flex-1">
+                            <div className="mb-6"><h4 className="flex items-center gap-2 font-bold text-slate-700 mb-3"><Type className="w-5 h-5 text-slate-500" />שם הילד</h4><input type="text" value={customName} onChange={(e) => setCustomName(e.target.value)} className="w-full p-3 rounded-xl border border-slate-300 text-lg" /></div>
+                            <div className="mb-8"><h4 className="flex items-center gap-2 font-bold text-slate-700 mb-3"><Palette className="w-5 h-5 text-purple-500" />בחר צבע</h4><div className="flex flex-wrap gap-3">{THEMES.map(t => <button key={t.id} onClick={() => setSelectedThemeId(t.id)} className={`w-10 h-10 rounded-full border-2 flex items-center justify-center ${t.classes.split(' ')[0]} ${selectedThemeId === t.id ? 'border-slate-800 scale-110 shadow-md ring-2' : 'border-transparent'}`}>{selectedThemeId === t.id && <Check className={`w-5 h-5 ${t.classes.split(' ')[1]}`} />}</button>)}</div></div>
+                            <div>
+                                <h4 className="flex items-center gap-2 font-bold text-slate-700 mb-3"><Smile className="w-5 h-5 text-orange-500" />סמל / תמונה</h4>
+                                <div className="flex bg-slate-100 p-1 rounded-xl mb-4"><button onClick={() => setActiveTab('icon')} className={`flex-1 py-2 rounded-lg font-medium ${activeTab==='icon'?'bg-white shadow':''}`}>סמלים</button><button onClick={() => setActiveTab('emoji')} className={`flex-1 py-2 rounded-lg font-medium ${activeTab==='emoji'?'bg-white shadow':''}`}>אימוג'י</button><button onClick={() => setActiveTab('image')} className={`flex-1 py-2 rounded-lg font-medium ${activeTab==='image'?'bg-white shadow':''}`}>תמונה</button></div>
+                                {activeTab === 'icon' && <div className="grid grid-cols-5 gap-3">{Object.entries(ICON_MAP).map(([k, I]) => <button key={k} onClick={() => setSelectedIconKey(k)} className={`aspect-square rounded-xl flex items-center justify-center border-2 ${selectedIconKey === k ? 'bg-blue-50 border-blue-500 text-blue-600' : 'bg-white border-slate-200'}`}><I className="w-6 h-6" /></button>)}
