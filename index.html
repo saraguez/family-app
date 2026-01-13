@@ -36,16 +36,15 @@
         const { useState, useEffect, useRef } = React;
 
         // --- FIREBASE CONFIGURATION ---
-        // 🔴 PASTE YOUR FIREBASE KEYS HERE 🔴
-       const firebaseConfig = {
-  apiKey: "AIzaSyCET42vMcj1uC0nMsqsWy2xd-yv1WC7e68",
-  authDomain: "family-tasks-ee68f.firebaseapp.com",
-  projectId: "family-tasks-ee68f",
-  storageBucket: "family-tasks-ee68f.firebasestorage.app",
-  messagingSenderId: "579816138584",
-  appId: "1:579816138584:web:1b2a3cbf4c5fd00a45e72d"
-};
-
+        // 🔴 וודא שהמפתחות שלך מעודכנים כאן 🔴
+        const firebaseConfig = {
+            apiKey: "AIzaSyCET42vMcj1uC0nMsqsWy2xd-yv1WC7e68",
+            authDomain: "family-tasks-ee68f.firebaseapp.com",
+            projectId: "family-tasks-ee68f",
+            storageBucket: "family-tasks-ee68f.firebasestorage.app",
+            messagingSenderId: "579816138584",
+            appId: "1:579816138584:web:1b2a3cbf4c5fd00a45e72d"
+        };
 
         if (!firebase.apps.length) {
             try {
@@ -56,7 +55,9 @@
         }
         const auth = firebase.auth();
         const db = firebase.firestore();
-        const appId = "default-app-id";
+
+        // 🟢🟢🟢 שינוי חשוב: שנה את השם הזה למשהו ייחודי (למשל: cohen-family-2024) 🟢🟢🟢
+        const appId = "CHANGE-THIS-TO-YOUR-UNIQUE-FAMILY-ID"; 
 
         // --- ICONS ---
         const IconBase = ({ children, className, ...props }) => (
@@ -438,31 +439,44 @@
             const handleImageUpload = async (e) => {
                 const file = e.target.files[0];
                 if (file) {
-                    setIsProcessingImage(true);
-                    try { const resizedBase64 = await resizeImage(file); setCustomImage(resizedBase64); } catch (err) { console.error("Image processing error", err); } finally { setIsProcessingImage(false); }
+                setIsProcessingImage(true);
+                try { const resizedBase64 = await resizeImage(file); setCustomImage(resizedBase64); } catch (err) { console.error("Image processing error", err); } finally { setIsProcessingImage(false); }
                 }
             };
-            const handleSave = () => { onSave({ themeId: selectedThemeId, useEmoji: activeTab === 'emoji', useImage: activeTab === 'image', iconKey: selectedIconKey, emoji: customEmoji || '🏆', image: customImage || null, title: customTitle, targetPoints: Number(customTarget), parentPin: customPin }); };
+
+            const handleSave = () => {
+                onSave({
+                    themeId: selectedThemeId,
+                    useEmoji: activeTab === 'emoji',
+                    useImage: activeTab === 'image',
+                    iconKey: selectedIconKey,
+                    emoji: customEmoji || '🏆',
+                    image: customImage || null,
+                    title: customTitle,
+                    targetPoints: Number(customTarget),
+                    parentPin: customPin // Save PIN
+                });
+            };
 
             return (
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-fade-in">
-                    <div className="bg-white w-full max-w-lg rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
-                        <div className="p-6 border-b border-slate-100 flex justify-between items-center bg-slate-50"><h3 className="text-xl font-bold text-slate-800">עריכת כותרת וסמל</h3><button onClick={onClose} className="p-2 hover:bg-slate-200 rounded-full"><Icons.X className="w-5 h-5" /></button></div>
-                        <div className="p-6 overflow-y-auto flex-1">
-                            <div className="mb-6"><h4 className="flex items-center gap-2 font-bold text-slate-700 mb-3"><Icons.Type className="w-5 h-5 text-slate-500" />כותרת האפליקציה</h4><input type="text" value={customTitle} onChange={(e) => setCustomTitle(e.target.value)} className="w-full p-3 rounded-xl border border-slate-300 focus:border-blue-500 focus:ring-4 focus:ring-blue-100 outline-none text-lg" placeholder="הכנס כותרת..." /></div>
-                            <div className="mb-6"><h4 className="flex items-center gap-2 font-bold text-slate-700 mb-3"><Icons.Target className="w-5 h-5 text-slate-500" />יעד נקודות</h4><input type="number" value={customTarget} onChange={(e) => setCustomTarget(e.target.value)} className="w-full p-3 rounded-xl border border-slate-300 focus:border-blue-500 focus:ring-4 focus:ring-blue-100 outline-none text-lg" placeholder="100" min="1" /></div>
-                            <div className="mb-6"><h4 className="flex items-center gap-2 font-bold text-slate-700 mb-3"><Icons.Lock className="w-5 h-5 text-slate-500" />קוד הורים (אופציונלי)</h4><input type="text" maxLength="4" value={customPin} onChange={(e) => setCustomPin(e.target.value.replace(/\D/g, ''))} className="w-full p-3 rounded-xl border border-slate-300 focus:border-blue-500 focus:ring-4 focus:ring-blue-100 outline-none text-lg tracking-widest text-center" placeholder="הגדר קוד (4 ספרות)" /><p className="text-xs text-slate-400 mt-1">השאר ריק כדי לבטל נעילה</p></div>
-                            <div className="mb-8"><h4 className="flex items-center gap-2 font-bold text-slate-700 mb-3"><Icons.Palette className="w-5 h-5 text-purple-500" />בחר צבע</h4><div className="flex flex-wrap gap-3">{THEMES.map(theme => (<button key={theme.id} onClick={() => setSelectedThemeId(theme.id)} className={`w-10 h-10 rounded-full border-2 flex items-center justify-center transition-all ${theme.classes.split(' ')[0]} ${selectedThemeId === theme.id ? 'border-slate-800 scale-110 shadow-md ring-2 ring-slate-200' : 'border-transparent'}`}>{selectedThemeId === theme.id && <Icons.Check className={`w-5 h-5 ${theme.classes.split(' ')[1]}`} />}</button>))}</div></div>
-                            <div>
-                                <h4 className="flex items-center gap-2 font-bold text-slate-700 mb-3"><Icons.Smile className="w-5 h-5 text-orange-500" />בחר סמל, אימוג'י או תמונה</h4>
-                                <div className="flex bg-slate-100 p-1 rounded-xl mb-4"><button onClick={() => setActiveTab('icon')} className={`flex-1 py-2 rounded-lg font-medium transition-all ${activeTab === 'icon' ? 'bg-white shadow text-slate-800' : 'text-slate-500 hover:text-slate-700'}`}>סמלים</button><button onClick={() => setActiveTab('emoji')} className={`flex-1 py-2 rounded-lg font-medium transition-all ${activeTab === 'emoji' ? 'bg-white shadow text-slate-800' : 'text-slate-500 hover:text-slate-700'}`}>אימוג'י</button><button onClick={() => setActiveTab('image')} className={`flex-1 py-2 rounded-lg font-medium transition-all flex items-center justify-center gap-2 ${activeTab === 'image' ? 'bg-white shadow text-slate-800' : 'text-slate-500 hover:text-slate-700'}`}><Icons.Camera className="w-4 h-4" />תמונה</button></div>
-                                {activeTab === 'icon' && (<div className="grid grid-cols-5 gap-3">{Object.entries(ICON_MAP).map(([key, IconCmp]) => (<button key={key} onClick={() => setSelectedIconKey(key)} className={`aspect-square rounded-xl flex items-center justify-center border-2 transition-all ${selectedIconKey === key ? 'bg-blue-50 border-blue-500 text-blue-600' : 'bg-white border-slate-200 text-slate-400 hover:border-blue-200'}`}><IconCmp className="w-6 h-6" /></button>))}</div>)}
-                                {activeTab === 'emoji' && (<div className="flex flex-col items-center p-4 bg-slate-50 rounded-xl border border-slate-200"><label className="text-sm text-slate-500 mb-2">הקלד או הדבק אימוג'י כאן:</label><input type="text" value={customEmoji} onChange={(e) => setCustomEmoji(e.target.value)} className="w-24 h-24 text-center text-6xl rounded-2xl border-2 border-slate-300 focus:border-blue-500 focus:ring-4 focus:ring-blue-100 outline-none bg-white" maxLength={2} /></div>)}
-                                {activeTab === 'image' && (<div className="flex flex-col items-center p-4 bg-slate-50 rounded-xl border border-slate-200"><div className="relative w-32 h-32 mb-4 group cursor-pointer">{customImage ? (<img src={customImage} alt="Preview" className="w-full h-full object-cover rounded-full border-4 border-white shadow-md" />) : (<div className="w-full h-full rounded-full bg-slate-200 flex items-center justify-center border-4 border-white shadow-md"><Icons.ImageIcon className="w-10 h-10 text-slate-400" /></div>)}<label htmlFor="file-upload-family" className="absolute inset-0 flex items-center justify-center bg-black/30 text-white opacity-0 group-hover:opacity-100 rounded-full transition-opacity cursor-pointer"><Icons.Upload className="w-8 h-8" /></label><input id="file-upload-family" type="file" accept="image/*" onChange={handleImageUpload} className="hidden" /></div>{isProcessingImage ? (<p className="text-sm text-blue-500 animate-pulse">מעבד תמונה...</p>) : (<label htmlFor="file-upload-family" className="px-4 py-2 bg-white border border-slate-300 rounded-lg text-sm font-medium hover:bg-slate-50 cursor-pointer">בחר תמונה</label>)}<p className="text-xs text-slate-400 mt-2 text-center">בחר תמונה מהמכשיר. התמונה תוקטן אוטומטית.</p></div>)}
-                            </div>
+                <div className="bg-white w-full max-w-lg rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
+                    <div className="p-6 border-b border-slate-100 flex justify-between items-center bg-slate-50"><h3 className="text-xl font-bold text-slate-800">עריכת כותרת וסמל</h3><button onClick={onClose} className="p-2 hover:bg-slate-200 rounded-full"><Icons.X className="w-5 h-5" /></button></div>
+                    <div className="p-6 overflow-y-auto flex-1">
+                        <div className="mb-6"><h4 className="flex items-center gap-2 font-bold text-slate-700 mb-3"><Icons.Type className="w-5 h-5 text-slate-500" />כותרת האפליקציה</h4><input type="text" value={customTitle} onChange={(e) => setCustomTitle(e.target.value)} className="w-full p-3 rounded-xl border border-slate-300 focus:border-blue-500 focus:ring-4 focus:ring-blue-100 outline-none text-lg" placeholder="הכנס כותרת..." /></div>
+                        <div className="mb-6"><h4 className="flex items-center gap-2 font-bold text-slate-700 mb-3"><Icons.Target className="w-5 h-5 text-slate-500" />יעד נקודות</h4><input type="number" value={customTarget} onChange={(e) => setCustomTarget(e.target.value)} className="w-full p-3 rounded-xl border border-slate-300 focus:border-blue-500 focus:ring-4 focus:ring-blue-100 outline-none text-lg" placeholder="100" min="1" /></div>
+                        <div className="mb-6"><h4 className="flex items-center gap-2 font-bold text-slate-700 mb-3"><Icons.Lock className="w-5 h-5 text-slate-500" />קוד הורים (אופציונלי)</h4><input type="text" maxLength="4" value={customPin} onChange={(e) => setCustomPin(e.target.value.replace(/\D/g, ''))} className="w-full p-3 rounded-xl border border-slate-300 focus:border-blue-500 focus:ring-4 focus:ring-blue-100 outline-none text-lg tracking-widest text-center" placeholder="הגדר קוד (4 ספרות)" /><p className="text-xs text-slate-400 mt-1">השאר ריק כדי לבטל נעילה</p></div>
+                        <div className="mb-8"><h4 className="flex items-center gap-2 font-bold text-slate-700 mb-3"><Icons.Palette className="w-5 h-5 text-purple-500" />בחר צבע</h4><div className="flex flex-wrap gap-3">{THEMES.map(theme => (<button key={theme.id} onClick={() => setSelectedThemeId(theme.id)} className={`w-10 h-10 rounded-full border-2 flex items-center justify-center transition-all ${theme.classes.split(' ')[0]} ${selectedThemeId === theme.id ? 'border-slate-800 scale-110 shadow-md ring-2 ring-slate-200' : 'border-transparent'}`}>{selectedThemeId === theme.id && <Icons.Check className={`w-5 h-5 ${theme.classes.split(' ')[1]}`} />}</button>))}</div></div>
+                        <div>
+                            <h4 className="flex items-center gap-2 font-bold text-slate-700 mb-3"><Icons.Smile className="w-5 h-5 text-orange-500" />בחר סמל, אימוג'י או תמונה</h4>
+                            <div className="flex bg-slate-100 p-1 rounded-xl mb-4"><button onClick={() => setActiveTab('icon')} className={`flex-1 py-2 rounded-lg font-medium transition-all ${activeTab === 'icon' ? 'bg-white shadow text-slate-800' : 'text-slate-500 hover:text-slate-700'}`}>סמלים</button><button onClick={() => setActiveTab('emoji')} className={`flex-1 py-2 rounded-lg font-medium transition-all ${activeTab === 'emoji' ? 'bg-white shadow text-slate-800' : 'text-slate-500 hover:text-slate-700'}`}>אימוג'י</button><button onClick={() => setActiveTab('image')} className={`flex-1 py-2 rounded-lg font-medium transition-all flex items-center justify-center gap-2 ${activeTab === 'image' ? 'bg-white shadow text-slate-800' : 'text-slate-500 hover:text-slate-700'}`}><Icons.Camera className="w-4 h-4" />תמונה</button></div>
+                            {activeTab === 'icon' && (<div className="grid grid-cols-5 gap-3">{Object.entries(ICON_MAP).map(([key, IconCmp]) => (<button key={key} onClick={() => setSelectedIconKey(key)} className={`aspect-square rounded-xl flex items-center justify-center border-2 transition-all ${selectedIconKey === key ? 'bg-blue-50 border-blue-500 text-blue-600' : 'bg-white border-slate-200 text-slate-400 hover:border-blue-200'}`}><IconCmp className="w-6 h-6" /></button>))}</div>)}
+                            {activeTab === 'emoji' && (<div className="flex flex-col items-center p-4 bg-slate-50 rounded-xl border border-slate-200"><label className="text-sm text-slate-500 mb-2">הקלד או הדבק אימוג'י כאן:</label><input type="text" value={customEmoji} onChange={(e) => setCustomEmoji(e.target.value)} className="w-24 h-24 text-center text-6xl rounded-2xl border-2 border-slate-300 focus:border-blue-500 focus:ring-4 focus:ring-blue-100 outline-none bg-white" maxLength={2} /></div>)}
+                            {activeTab === 'image' && (<div className="flex flex-col items-center p-4 bg-slate-50 rounded-xl border border-slate-200"><div className="relative w-32 h-32 mb-4 group cursor-pointer">{customImage ? (<img src={customImage} alt="Preview" className="w-full h-full object-cover rounded-full border-4 border-white shadow-md" />) : (<div className="w-full h-full rounded-full bg-slate-200 flex items-center justify-center border-4 border-white shadow-md"><Icons.ImageIcon className="w-10 h-10 text-slate-400" /></div>)}<label htmlFor="file-upload-family" className="absolute inset-0 flex items-center justify-center bg-black/30 text-white opacity-0 group-hover:opacity-100 rounded-full transition-opacity cursor-pointer"><Icons.Upload className="w-8 h-8" /></label><input id="file-upload-family" type="file" accept="image/*" onChange={handleImageUpload} className="hidden" /></div>{isProcessingImage ? (<p className="text-sm text-blue-500 animate-pulse">מעבד תמונה...</p>) : (<label htmlFor="file-upload-family" className="px-4 py-2 bg-white border border-slate-300 rounded-lg text-sm font-medium hover:bg-slate-50 cursor-pointer">בחר תמונה</label>)}<p className="text-xs text-slate-400 mt-2 text-center">בחר תמונה מהמכשיר. התמונה תוקטן אוטומטית.</p></div>)}
                         </div>
-                        <div className="p-6 border-t border-slate-100 bg-slate-50 flex justify-end gap-3"><button onClick={onClose} className="px-5 py-2.5 rounded-xl font-bold text-slate-500 hover:bg-slate-200 transition-colors">ביטול</button><button onClick={handleSave} className="px-8 py-2.5 rounded-xl font-bold text-white bg-blue-600 hover:bg-blue-700 shadow-lg shadow-blue-200 transition-all">שמור שינויים</button></div>
                     </div>
+                    <div className="p-6 border-t border-slate-100 bg-slate-50 flex justify-end gap-3"><button onClick={onClose} className="px-5 py-2.5 rounded-xl font-bold text-slate-500 hover:bg-slate-200 transition-colors">ביטול</button><button onClick={handleSave} className="px-8 py-2.5 rounded-xl font-bold text-white bg-blue-600 hover:bg-blue-700 shadow-lg shadow-blue-200 transition-all">שמור שינויים</button></div>
+                </div>
                 </div>
             );
         };
@@ -475,6 +489,8 @@
             const [familySettings, setFamilySettings] = useState({});
             const [tasksData, setTasksData] = useState({});
             const [history, setHistory] = useState([]);
+            const [childScores, setChildScores] = useState({}); // New state for individual scores
+
             const [selectedChild, setSelectedChild] = useState(null);
             const [editingChildId, setEditingChildId] = useState(null);
             const [showFamilyEditModal, setShowFamilyEditModal] = useState(false);
@@ -518,8 +534,9 @@
                         setFamilySettings(data.familySettings || {});
                         setTasksData(data.childTasks || {});
                         setHistory(data.history || []);
+                        setChildScores(data.childScores || {}); // Load child scores
                     } else {
-                        docRef.set({ points: 0, completedTasks: {}, childSettings: {}, familySettings: {}, childTasks: {}, history: [] });
+                        docRef.set({ points: 0, completedTasks: {}, childSettings: {}, familySettings: {}, childTasks: {}, history: [], childScores: {} });
                     }
                 });
                 return () => unsubscribe();
@@ -568,6 +585,17 @@
                 await docRef.update({ history: updatedHistory });
             };
 
+            // New function to delete history entry
+            const handleDeleteHistoryEntry = (index) => {
+                verifyParentAuth(async () => {
+                    if (!user) return;
+                    const newHistory = [...history];
+                    newHistory.splice(index, 1);
+                    const docRef = db.collection('artifacts').doc(appId).collection('public').doc('data').collection('family_project_v1').doc('status');
+                    await docRef.update({ history: newHistory });
+                });
+            };
+
             const triggerConfetti = () => {
                 setAnimationClass('scale-110'); setTimeout(() => setAnimationClass(''), 200); setShowConfetti(true);
                 if (confettiTimeoutRef.current) clearTimeout(confettiTimeoutRef.current);
@@ -580,12 +608,27 @@
                 const isAlreadyDone = completedTasks[taskKey];
                 const docRef = db.collection('artifacts').doc(appId).collection('public').doc('data').collection('family_project_v1').doc('status');
                 const childName = getChildVisuals(childId).name;
+                
+                // Prepare updates
+                const updates = {};
+                
                 if (isAlreadyDone) {
-                    await docRef.update({ points: firebase.firestore.FieldValue.increment(-1), [`completedTasks.${taskKey}`]: false });
+                    updates.points = firebase.firestore.FieldValue.increment(-1);
+                    updates[`completedTasks.${taskKey}`] = false;
+                    // Decrease child score
+                    updates[`childScores.${childId}`] = firebase.firestore.FieldValue.increment(-1);
+                    
+                    await docRef.update(updates);
                     addToHistoryLog(`ביטול: ${taskText || 'משימה'} (${childName})`, -1);
                 } else {
                     playSuccessSound(); triggerConfetti();
-                    await docRef.update({ points: firebase.firestore.FieldValue.increment(1), [`completedTasks.${taskKey}`]: true });
+                    
+                    updates.points = firebase.firestore.FieldValue.increment(1);
+                    updates[`completedTasks.${taskKey}`] = true;
+                    // Increase child score
+                    updates[`childScores.${childId}`] = firebase.firestore.FieldValue.increment(1);
+                    
+                    await docRef.update(updates);
                     addToHistoryLog(`משימה: ${taskText || 'משימה'} (${childName})`, 1);
                 }
             };
@@ -670,7 +713,8 @@
                 verifyParentAuth(async () => {
                     if (!user) return;
                     const docRef = db.collection('artifacts').doc(appId).collection('public').doc('data').collection('family_project_v1').doc('status');
-                    await docRef.update({ points: 0 });
+                    // Reset family points AND all child scores
+                    await docRef.update({ points: 0, childScores: {} });
                     addToHistoryLog('איפוס נקודות', -points);
                     setShowWinModal(false);
                 });
@@ -712,9 +756,18 @@
                         {CHILDREN_DEFAULTS.map((child) => {
                             const { theme, IconComponent, useEmoji, emoji, useImage, image, name } = getChildVisuals(child.id);
                             const currentTasks = getChildTasks(child.id);
+                            // Get score from state, default to 0
+                            const currentScore = childScores[child.id] || 0;
+
                             return (
                                 <div key={child.id} className={`group relative bg-white rounded-3xl p-6 border-4 ${theme.classes.split(' ')[2]} shadow-md hover:shadow-xl hover:-translate-y-2 transition-all duration-300 flex flex-col items-center justify-center gap-4 h-64 select-none`} {...createLongPressHandlers(() => setEditingChildId(child.id), () => setSelectedChild(child))}>
                                     <button onClick={(e) => { e.stopPropagation(); verifyParentAuth(() => setEditingChildId(child.id)); }} className="absolute top-2 right-2 p-2 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-400 hover:text-slate-600 transition-colors opacity-0 group-hover:opacity-100 z-10" title="עריכת עיצוב"><Icons.Settings className="w-4 h-4" /></button>
+                                    
+                                    {/* Personal Score Badge */}
+                                    <div className="absolute top-0 left-0 -mt-3 -ml-3 bg-gradient-to-br from-yellow-400 to-orange-500 text-white w-10 h-10 flex items-center justify-center rounded-full shadow-lg font-bold border-2 border-white z-20">
+                                        {currentScore}
+                                    </div>
+
                                     <div className="flex flex-col items-center justify-center w-full h-full cursor-pointer">
                                         <div className={`w-24 h-24 rounded-full ${theme.iconBg} flex items-center justify-center shadow-inner group-hover:scale-110 transition-transform overflow-hidden relative`}>{useImage && image ? <img src={image} alt={name} className="w-full h-full object-cover" /> : useEmoji ? <span className="text-5xl leading-none select-none">{emoji}</span> : <IconComponent className={`w-10 h-10 ${theme.iconText}`} />}</div>
                                         <h2 className="text-2xl font-bold text-center mt-4" title="לחיצה ארוכה לעריכת שם">{name}</h2>
@@ -730,7 +783,19 @@
                     {showFamilyEditModal && <EditFamilyModal initialSettings={getFamilyVisuals()} currentSettings={familySettings} onClose={() => setShowFamilyEditModal(false)} onSave={handleSaveFamilySettings} />}
                     {showBonusModal && <BonusModal onClose={() => setShowBonusModal(false)} onConfirm={handleBonusPoint} />}
                     {showWinModal && (<div className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-black/60 backdrop-blur-md animate-fade-in"><div className="bg-white w-full max-w-lg rounded-[2.5rem] shadow-2xl p-8 text-center animate-scale-up border-8 border-yellow-300 relative overflow-hidden"><div className="absolute top-0 left-0 w-full h-32 bg-yellow-100 rounded-b-[50%] -translate-y-16"></div><div className="relative z-10"><div className="mx-auto w-32 h-32 bg-gradient-to-b from-yellow-300 to-yellow-500 rounded-full flex items-center justify-center mb-6 shadow-xl border-4 border-white animate-bounce"><Icons.Trophy className="w-16 h-16 text-white drop-shadow-md" /></div><h2 className="text-5xl font-black text-slate-800 mb-2 tracking-tight">כל הכבוד!</h2><h3 className="text-2xl font-bold text-slate-600 mb-6">הגעתם ליעד של {targetPoints} נקודות!</h3><div className="p-4 bg-yellow-50 rounded-2xl mb-8 border-2 border-yellow-200"><p className="text-yellow-800 text-lg">"יגעת ומצאת תאמין!"</p><p className="text-yellow-700 font-bold mt-1">המשיכו כך!</p></div><button onClick={handleResetPoints} className="w-full py-4 rounded-2xl bg-gradient-to-r from-blue-500 to-blue-600 text-white font-bold text-xl shadow-xl hover:shadow-2xl hover:scale-[1.02] transition-all flex items-center justify-center gap-2 group"><Icons.RotateCcw className="w-6 h-6 group-hover:rotate-180 transition-transform duration-500" />אפס נקודות והתחל מחדש</button></div></div></div>)}
-                    {showHistoryModal && (<div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm animate-fade-in"><div className="bg-white w-full max-w-md rounded-3xl shadow-2xl flex flex-col max-h-[80vh]"><div className="p-5 border-b border-slate-100 flex justify-between items-center bg-slate-50"><h3 className="text-xl font-bold text-slate-800 flex items-center gap-2"><Icons.History className="w-5 h-5 text-blue-500"/>היסטוריית נקודות</h3><button onClick={() => setShowHistoryModal(false)} className="p-2 hover:bg-slate-200 rounded-full"><Icons.X className="w-5 h-5" /></button></div><div className="overflow-y-auto p-4 flex-1 space-y-3">{history.length === 0 ? (<p className="text-center text-slate-400 py-10">אין עדיין היסטוריה</p>) : (history.map((item, i) => (<div key={i} className="flex justify-between items-center p-3 bg-slate-50 rounded-xl border border-slate-100"><div><p className="font-bold text-slate-700">{item.text}</p><p className="text-xs text-slate-400">{new Date(item.timestamp).toLocaleTimeString('he-IL', {hour: '2-digit', minute:'2-digit'})} • {new Date(item.timestamp).toLocaleDateString('he-IL')}</p></div><span className={`font-bold dir-ltr ${item.diff > 0 ? 'text-green-600' : 'text-red-500'}`}>{item.diff > 0 ? '+' : ''}{item.diff}</span></div>)))}</div></div></div>)}
+                    
+                    {/* History Modal with Delete Option */}
+                    {showHistoryModal && (<div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm animate-fade-in"><div className="bg-white w-full max-w-md rounded-3xl shadow-2xl flex flex-col max-h-[80vh]"><div className="p-5 border-b border-slate-100 flex justify-between items-center bg-slate-50"><h3 className="text-xl font-bold text-slate-800 flex items-center gap-2"><Icons.History className="w-5 h-5 text-blue-500"/>היסטוריית נקודות</h3><button onClick={() => setShowHistoryModal(false)} className="p-2 hover:bg-slate-200 rounded-full"><Icons.X className="w-5 h-5" /></button></div><div className="overflow-y-auto p-4 flex-1 space-y-3">{history.length === 0 ? (<p className="text-center text-slate-400 py-10">אין עדיין היסטוריה</p>) : (history.map((item, i) => (<div key={i} className="flex justify-between items-center p-3 bg-slate-50 rounded-xl border border-slate-100">
+                        <div className="flex-1">
+                            <p className="font-bold text-slate-700">{item.text}</p>
+                            <p className="text-xs text-slate-400">{new Date(item.timestamp).toLocaleTimeString('he-IL', {hour: '2-digit', minute:'2-digit'})} • {new Date(item.timestamp).toLocaleDateString('he-IL')}</p>
+                        </div>
+                        <div className="flex items-center gap-3">
+                            <span className={`font-bold dir-ltr ${item.diff > 0 ? 'text-green-600' : 'text-red-500'}`}>{item.diff > 0 ? '+' : ''}{item.diff}</span>
+                            <button onClick={() => handleDeleteHistoryEntry(i)} className="p-1.5 bg-red-50 text-red-400 rounded-lg hover:bg-red-100 hover:text-red-600 transition-colors"><Icons.Trash2 className="w-4 h-4" /></button>
+                        </div>
+                    </div>)))}</div></div></div>)}
+                    
                     {showPinModal && <PinModal onClose={() => setShowPinModal(false)} onSuccess={handlePinSuccess} correctPin={parentPin} />}
                 </div>
             );
