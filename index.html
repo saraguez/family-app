@@ -37,7 +37,7 @@
 
         // --- FIREBASE CONFIGURATION ---
         // 🔴 PASTE YOUR FIREBASE KEYS HERE 🔴
-        const firebaseConfig = {
+       const firebaseConfig = {
   apiKey: "AIzaSyCET42vMcj1uC0nMsqsWy2xd-yv1WC7e68",
   authDomain: "family-tasks-ee68f.firebaseapp.com",
   projectId: "family-tasks-ee68f",
@@ -104,6 +104,11 @@
             Lock: (p) => <IconBase {...p}><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></IconBase>,
             Unlock: (p) => <IconBase {...p}><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 9.9-1"/></IconBase>,
             History: (p) => <IconBase {...p}><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M12 7v5l4 2"/></IconBase>,
+            Pencil: (p) => <IconBase {...p}><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></IconBase>,
+            CheckSquare: (p) => <IconBase {...p}><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></IconBase>,
+            ArrowUp: (p) => <IconBase {...p}><line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/></IconBase>,
+            ArrowDown: (p) => <IconBase {...p}><line x1="12" y1="5" x2="12" y2="19"/><polyline points="19 12 12 19 5 12"/></IconBase>,
+            Save: (p) => <IconBase {...p}><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></IconBase>
         };
 
         const ICON_MAP = {
@@ -170,35 +175,148 @@
             } catch (e) { console.error("Audio error", e); }
         };
 
-        const TaskItem = ({ task, childId, isDone, onToggleTask, onDeleteTask }) => (
-            <div className="relative group mb-3">
-                <button type="button" onClick={() => onToggleTask(childId, task.id, task.text)} className={`w-full flex items-center justify-between p-5 rounded-2xl border-2 transition-all duration-200 cursor-pointer select-none active:scale-[0.98] ${isDone ? 'bg-green-50 border-green-200 shadow-none' : 'bg-white border-slate-100 shadow-md hover:border-blue-200'}`} style={{ WebkitTapHighlightColor: 'transparent' }}>
-                    <div className="flex items-center gap-3">
-                        {task.type === 'one-time' && <Icons.Calendar className="w-4 h-4 text-blue-400" />}
-                        {task.type === 'daily' && <Icons.Repeat className="w-4 h-4 text-purple-400" />}
-                        {task.type === 'friday' && <Icons.CalendarDays className="w-4 h-4 text-pink-400" />}
-                        {task.type === 'morning' && <Icons.Sunrise className="w-4 h-4 text-orange-400" />}
-                        {(task.type === 'evening' || task.type === 'daily') && <Icons.Moon className="w-4 h-4 text-indigo-400" />}
-                        <span className={`text-xl font-medium ${isDone ? 'text-green-800 line-through opacity-70' : 'text-slate-700'}`}>{task.text}</span>
-                    </div>
-                    <div className={`w-10 h-10 rounded-full flex items-center justify-center border-2 transition-all ${isDone ? 'bg-green-500 border-green-500 scale-110' : 'bg-white border-slate-300 group-hover:border-blue-400'}`}>
-                        {isDone && <Icons.Check className="w-6 h-6 text-white" />}
-                    </div>
-                </button>
-                <button type="button" onClick={(e) => { e.stopPropagation(); onDeleteTask(childId, task.id); }} className="absolute -left-2 top-1/2 -translate-y-1/2 -translate-x-full p-2 bg-red-100 text-red-500 rounded-full opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-200 z-10" title="מחק משימה"><Icons.Trash2 className="w-5 h-5" /></button>
-            </div>
-        );
+        // --- COMPONENTS ---
 
-        const TaskModal = ({ child, tasks, completedTasks, visuals, onToggleTask, onClose, onAddTask, onDeleteTask, getTodayKey }) => {
+        function Confetti({ density = 150 }) {
+            const canvasRef = useRef(null);
+            useEffect(() => {
+                const canvas = canvasRef.current;
+                if (!canvas) return;
+                const ctx = canvas.getContext('2d');
+                const updateSize = () => { canvas.width = window.innerWidth; canvas.height = window.innerHeight; };
+                updateSize();
+                window.addEventListener('resize', updateSize);
+                const colors = ['#FCD34D', '#F87171', '#60A5FA', '#34D399', '#A78BFA', '#F472B6'];
+                const particles = Array.from({ length: density }).map(() => ({
+                    x: Math.random() * canvas.width, y: -Math.random() * canvas.height, color: colors[Math.floor(Math.random() * colors.length)],
+                    size: Math.random() * 8 + 4, weight: Math.random() * 3 + 2, angle: Math.random() * 360, spin: Math.random() * 5 - 2.5, oscillationSpeed: Math.random() * 0.05 + 0.02
+                }));
+                let animationId;
+                function animate() {
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+                    particles.forEach(p => {
+                        p.y += p.weight; p.angle += p.spin; p.x += Math.sin(p.angle * p.oscillationSpeed) * 2;
+                        if (p.y > canvas.height) { p.y = -10; p.x = Math.random() * canvas.width; }
+                        ctx.save(); ctx.translate(p.x, p.y); ctx.rotate(p.angle * Math.PI / 180); ctx.fillStyle = p.color;
+                        ctx.fillRect(-p.size / 2, -p.size / 2, p.size, p.size); ctx.restore();
+                    });
+                    animationId = requestAnimationFrame(animate);
+                }
+                animate();
+                return () => { cancelAnimationFrame(animationId); window.removeEventListener('resize', updateSize); };
+            }, [density]);
+            return <canvas ref={canvasRef} className="fixed inset-0 pointer-events-none z-[100]" />;
+        }
+
+        const BonusModal = ({ onClose, onConfirm }) => {
+            const [amount, setAmount] = useState(1);
+            return (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm animate-fade-in">
+                    <div className="bg-white w-full max-w-md rounded-3xl shadow-2xl p-6 text-center animate-scale-up">
+                        <div className="mx-auto w-16 h-16 bg-gradient-to-br from-orange-400 to-red-500 rounded-full flex items-center justify-center mb-4 shadow-lg"><Icons.Sparkles className="w-8 h-8 text-white" /></div>
+                        <h3 className="text-2xl font-bold text-slate-800 mb-2">הוספת בונוס</h3>
+                        <p className="text-slate-600 mb-6">כמה נקודות להוסיף למאמץ המשפחתי?</p>
+                        <div className="flex items-center justify-center gap-4 mb-8">
+                            <button onClick={() => setAmount(Math.max(1, amount - 1))} className="w-12 h-12 rounded-full bg-slate-100 flex items-center justify-center text-slate-600 font-bold hover:bg-slate-200 transition-colors shadow-sm"><Icons.Minus className="w-6 h-6" /></button>
+                            <div className="text-6xl font-black text-transparent bg-clip-text bg-gradient-to-r from-orange-500 to-red-600 w-24 tabular-nums">{amount}</div>
+                            <button onClick={() => setAmount(Math.min(10, amount + 1))} className="w-12 h-12 rounded-full bg-slate-100 flex items-center justify-center text-slate-600 font-bold hover:bg-slate-200 transition-colors shadow-sm"><Icons.Plus className="w-6 h-6" /></button>
+                        </div>
+                        <input type="range" min="1" max="10" value={amount} onChange={(e) => setAmount(parseInt(e.target.value))} className="w-full mb-8 accent-orange-500 h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer" />
+                        <div className="flex gap-4 justify-center">
+                            <button onClick={onClose} className="px-6 py-3 rounded-xl border-2 border-slate-200 text-slate-600 font-bold hover:bg-slate-50 transition-colors">ביטול</button>
+                            <button onClick={() => onConfirm(amount)} className="px-8 py-3 rounded-xl bg-gradient-to-r from-orange-400 to-red-500 text-white font-bold shadow-lg hover:shadow-xl hover:scale-105 transition-all">הוסף {amount} נקודות!</button>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        const PinModal = ({ onClose, onSuccess, correctPin }) => {
+            const [pin, setPin] = useState("");
+            const [error, setError] = useState(false);
+            const handleNumber = (num) => { if (pin.length < 4) { setPin(prev => prev + num); setError(false); } };
+            const handleBackspace = () => setPin(prev => prev.slice(0, -1));
+            const handleSubmit = () => { if (pin === correctPin) { onSuccess(); } else { setError(true); setPin(""); } };
+            return (
+                <div className="fixed inset-0 z-[120] flex items-center justify-center p-4 bg-black/50 backdrop-blur-md animate-fade-in">
+                    <div className="bg-white w-full max-w-sm rounded-3xl shadow-2xl p-6 text-center">
+                        <div className="mb-6"><div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4"><Icons.Lock className="w-8 h-8 text-slate-500" /></div><h3 className="text-xl font-bold text-slate-800">קוד הורים</h3><p className="text-slate-500 text-sm">אנא הקש קוד גישה לביצוע פעולה זו</p></div>
+                        <div className="flex justify-center gap-4 mb-8">{[0, 1, 2, 3].map(i => (<div key={i} className={`w-4 h-4 rounded-full transition-all ${i < pin.length ? 'bg-blue-500 scale-110' : 'bg-slate-200'}`} />))}</div>
+                        {error && <p className="text-red-500 text-sm font-bold mb-4 animate-pulse">קוד שגוי, נסה שנית</p>}
+                        <div className="grid grid-cols-3 gap-3 mb-6">{[1, 2, 3, 4, 5, 6, 7, 8, 9].map(n => (<button key={n} onClick={() => handleNumber(n)} className="h-16 rounded-2xl bg-slate-50 hover:bg-slate-100 font-bold text-2xl text-slate-700 transition-colors shadow-sm">{n}</button>))}<div></div><button onClick={() => handleNumber(0)} className="h-16 rounded-2xl bg-slate-50 hover:bg-slate-100 font-bold text-2xl text-slate-700 transition-colors shadow-sm">0</button><button onClick={handleBackspace} className="h-16 rounded-2xl hover:bg-red-50 flex items-center justify-center text-slate-400 hover:text-red-500 transition-colors"><Icons.X className="w-6 h-6" /></button></div>
+                        <div className="flex gap-2"><button onClick={onClose} className="flex-1 py-3 rounded-xl bg-slate-100 font-bold text-slate-600 hover:bg-slate-200">ביטול</button><button onClick={handleSubmit} className="flex-1 py-3 rounded-xl bg-blue-600 font-bold text-white hover:bg-blue-700 shadow-md">אישור</button></div>
+                    </div>
+                </div>
+            );
+        };
+
+        const TaskItem = ({ task, childId, isDone, onToggleTask, onDeleteTask, onEditTask, onMoveTask }) => {
+            const [isEditing, setIsEditing] = useState(false);
+            const [editText, setEditText] = useState(task.text);
+            const [editType, setEditType] = useState(task.type);
+
+            const handleSave = () => {
+                onEditTask(childId, task.id, editText, editType);
+                setIsEditing(false);
+            };
+
+            if (isEditing) {
+                return (
+                    <div className="bg-slate-50 p-4 rounded-2xl border-2 border-blue-200 mb-3 animate-fade-in">
+                        <input type="text" value={editText} onChange={(e) => setEditText(e.target.value)} className="w-full p-2 mb-3 rounded-lg border border-slate-300" />
+                        <div className="grid grid-cols-2 gap-2 mb-3">
+                            <button onClick={() => setEditType('morning')} className={`py-1 text-xs rounded border ${editType === 'morning' ? 'bg-orange-100 border-orange-300' : 'bg-white'}`}>בוקר</button>
+                            <button onClick={() => setEditType('evening')} className={`py-1 text-xs rounded border ${editType === 'evening' ? 'bg-indigo-100 border-indigo-300' : 'bg-white'}`}>ערב</button>
+                            <button onClick={() => setEditType('friday')} className={`py-1 text-xs rounded border ${editType === 'friday' ? 'bg-pink-100 border-pink-300' : 'bg-white'}`}>שישי</button>
+                            <button onClick={() => setEditType('one-time')} className={`py-1 text-xs rounded border ${editType === 'one-time' ? 'bg-blue-100 border-blue-300' : 'bg-white'}`}>היום</button>
+                        </div>
+                        <div className="flex justify-between items-center">
+                            <div className="flex gap-2">
+                                <button onClick={() => onMoveTask(childId, task.id, 'up')} className="p-2 bg-white rounded-lg border hover:bg-slate-100"><Icons.ArrowUp className="w-4 h-4" /></button>
+                                <button onClick={() => onMoveTask(childId, task.id, 'down')} className="p-2 bg-white rounded-lg border hover:bg-slate-100"><Icons.ArrowDown className="w-4 h-4" /></button>
+                            </div>
+                            <div className="flex gap-2">
+                                <button onClick={() => setIsEditing(false)} className="p-2 text-slate-500">ביטול</button>
+                                <button onClick={handleSave} className="p-2 bg-blue-500 text-white rounded-lg"><Icons.Save className="w-4 h-4" /></button>
+                            </div>
+                        </div>
+                    </div>
+                );
+            }
+
+            return (
+                <div className="relative group mb-3 flex items-center gap-2">
+                    <button type="button" onClick={() => onToggleTask(childId, task.id, task.text)} className={`flex-1 flex items-center justify-between p-5 rounded-2xl border-2 transition-all duration-200 cursor-pointer select-none active:scale-[0.98] ${isDone ? 'bg-green-50 border-green-200 shadow-none' : 'bg-white border-slate-100 shadow-md hover:border-blue-200'}`} style={{ WebkitTapHighlightColor: 'transparent' }}>
+                        <div className="flex items-center gap-3">
+                            {task.type === 'one-time' && <Icons.Calendar className="w-4 h-4 text-blue-400" />}
+                            {task.type === 'daily' && <Icons.Repeat className="w-4 h-4 text-purple-400" />}
+                            {task.type === 'friday' && <Icons.CalendarDays className="w-4 h-4 text-pink-400" />}
+                            {task.type === 'morning' && <Icons.Sunrise className="w-4 h-4 text-orange-400" />}
+                            {(task.type === 'evening' || task.type === 'daily') && <Icons.Moon className="w-4 h-4 text-indigo-400" />}
+                            <span className={`text-xl font-medium ${isDone ? 'text-green-800 line-through opacity-70' : 'text-slate-700'}`}>{task.text}</span>
+                        </div>
+                        <div className={`w-10 h-10 rounded-full flex items-center justify-center border-2 transition-all ${isDone ? 'bg-green-500 border-green-500 scale-110' : 'bg-white border-slate-300 group-hover:border-blue-400'}`}>
+                            {isDone && <Icons.Check className="w-6 h-6 text-white" />}
+                        </div>
+                    </button>
+                    <button onClick={() => setIsEditing(true)} className="p-3 bg-slate-100 rounded-xl text-slate-400 hover:text-blue-500 hover:bg-blue-50 transition-colors"><Icons.Pencil className="w-5 h-5" /></button>
+                    <button onClick={(e) => { e.stopPropagation(); onDeleteTask(childId, task.id); }} className="p-3 bg-red-50 rounded-xl text-red-300 hover:text-red-500 hover:bg-red-100 transition-colors" title="מחק משימה"><Icons.Trash2 className="w-5 h-5" /></button>
+                </div>
+            );
+        };
+
+        const TaskModal = ({ child, tasks, completedTasks, visuals, onToggleTask, onClose, onAddTask, onDeleteTask, onEditTask, onMoveTask, getTodayKey }) => {
             const { theme, IconComponent, useEmoji, emoji, useImage, image, name } = visuals;
             const [isAdding, setIsAdding] = useState(false);
             const [newTaskText, setNewTaskText] = useState("");
             const [newTaskType, setNewTaskType] = useState("evening");
+            const [addToAll, setAddToAll] = useState(false);
 
             const handleAddSubmit = () => {
                 if (!newTaskText.trim()) return;
-                onAddTask(child.id, newTaskText, newTaskType);
+                onAddTask(child.id, newTaskText, newTaskType, addToAll);
                 setNewTaskText("");
+                setAddToAll(false);
                 setIsAdding(false);
             }
 
@@ -221,13 +339,13 @@
                             {morningTasks.length > 0 && (
                                 <div className="mb-6">
                                     <h4 className="text-lg font-bold text-orange-500 mb-3 flex items-center gap-2"><Icons.Sunrise className="w-5 h-5" />בוקר</h4>
-                                    {morningTasks.map(task => <TaskItem key={task.id} task={task} childId={child.id} isDone={completedTasks[`${getTodayKey()}_${child.id}_${task.id}`]} onToggleTask={onToggleTask} onDeleteTask={onDeleteTask} />)}
+                                    {morningTasks.map(task => <TaskItem key={task.id} task={task} childId={child.id} isDone={completedTasks[`${getTodayKey()}_${child.id}_${task.id}`]} onToggleTask={onToggleTask} onDeleteTask={onDeleteTask} onEditTask={onEditTask} onMoveTask={onMoveTask} />)}
                                 </div>
                             )}
                             {(eveningTasks.length > 0 || tasks.length === 0) && (
                                 <div>
                                     <h4 className="text-lg font-bold text-indigo-500 mb-3 flex items-center gap-2"><Icons.Moon className="w-5 h-5" />ערב</h4>
-                                    {eveningTasks.map(task => <TaskItem key={task.id} task={task} childId={child.id} isDone={completedTasks[`${getTodayKey()}_${child.id}_${task.id}`]} onToggleTask={onToggleTask} onDeleteTask={onDeleteTask} />)}
+                                    {eveningTasks.map(task => <TaskItem key={task.id} task={task} childId={child.id} isDone={completedTasks[`${getTodayKey()}_${child.id}_${task.id}`]} onToggleTask={onToggleTask} onDeleteTask={onDeleteTask} onEditTask={onEditTask} onMoveTask={onMoveTask} />)}
                                     {tasks.length === 0 && <p className="text-center text-gray-400">אין משימות להיום</p>}
                                 </div>
                             )}
@@ -249,6 +367,10 @@
                                         <button onClick={() => setNewTaskType('friday')} className={`py-2 rounded-lg text-sm font-bold flex items-center justify-center gap-2 border ${newTaskType === 'friday' ? 'bg-pink-100 text-pink-700 border-pink-300' : 'bg-slate-50 text-slate-500 border-slate-200'}`}><Icons.CalendarDays className="w-4 h-4" />יום שישי</button>
                                         <button onClick={() => setNewTaskType('one-time')} className={`py-2 rounded-lg text-sm font-bold flex items-center justify-center gap-2 border ${newTaskType === 'one-time' ? 'bg-blue-100 text-blue-700 border-blue-300' : 'bg-slate-50 text-slate-500 border-slate-200'}`}><Icons.Calendar className="w-4 h-4" />רק להיום</button>
                                     </div>
+                                    <label className="flex items-center gap-2 mb-4 p-2 bg-slate-50 rounded-lg cursor-pointer">
+                                        <input type="checkbox" checked={addToAll} onChange={(e) => setAddToAll(e.target.checked)} className="w-5 h-5 text-blue-600 rounded focus:ring-blue-500 border-gray-300" />
+                                        <span className="text-sm font-bold text-slate-600">הוסף לכל הילדים</span>
+                                    </label>
                                     <div className="flex gap-2">
                                         <button onClick={() => setIsAdding(false)} className="flex-1 py-2 text-slate-500 font-bold hover:bg-slate-100 rounded-lg">ביטול</button>
                                         <button onClick={handleAddSubmit} className="flex-1 py-2 bg-blue-600 text-white font-bold rounded-lg hover:bg-blue-700 shadow-md">שמור</button>
@@ -340,48 +462,6 @@
                             </div>
                         </div>
                         <div className="p-6 border-t border-slate-100 bg-slate-50 flex justify-end gap-3"><button onClick={onClose} className="px-5 py-2.5 rounded-xl font-bold text-slate-500 hover:bg-slate-200 transition-colors">ביטול</button><button onClick={handleSave} className="px-8 py-2.5 rounded-xl font-bold text-white bg-blue-600 hover:bg-blue-700 shadow-lg shadow-blue-200 transition-all">שמור שינויים</button></div>
-                    </div>
-                </div>
-            );
-        };
-
-        const BonusModal = ({ onClose, onConfirm }) => {
-            const [amount, setAmount] = useState(1);
-            return (
-                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm animate-fade-in">
-                    <div className="bg-white w-full max-w-md rounded-3xl shadow-2xl p-6 text-center animate-scale-up">
-                        <div className="mx-auto w-16 h-16 bg-gradient-to-br from-orange-400 to-red-500 rounded-full flex items-center justify-center mb-4 shadow-lg"><Icons.Sparkles className="w-8 h-8 text-white" /></div>
-                        <h3 className="text-2xl font-bold text-slate-800 mb-2">הוספת בונוס</h3>
-                        <p className="text-slate-600 mb-6">כמה נקודות להוסיף למאמץ המשפחתי?</p>
-                        <div className="flex items-center justify-center gap-4 mb-8">
-                            <button onClick={() => setAmount(Math.max(1, amount - 1))} className="w-12 h-12 rounded-full bg-slate-100 flex items-center justify-center text-slate-600 font-bold hover:bg-slate-200 transition-colors shadow-sm"><Icons.Minus className="w-6 h-6" /></button>
-                            <div className="text-6xl font-black text-transparent bg-clip-text bg-gradient-to-r from-orange-500 to-red-600 w-24 tabular-nums">{amount}</div>
-                            <button onClick={() => setAmount(Math.min(10, amount + 1))} className="w-12 h-12 rounded-full bg-slate-100 flex items-center justify-center text-slate-600 font-bold hover:bg-slate-200 transition-colors shadow-sm"><Icons.Plus className="w-6 h-6" /></button>
-                        </div>
-                        <input type="range" min="1" max="10" value={amount} onChange={(e) => setAmount(parseInt(e.target.value))} className="w-full mb-8 accent-orange-500 h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer" />
-                        <div className="flex gap-4 justify-center">
-                            <button onClick={onClose} className="px-6 py-3 rounded-xl border-2 border-slate-200 text-slate-600 font-bold hover:bg-slate-50 transition-colors">ביטול</button>
-                            <button onClick={() => onConfirm(amount)} className="px-8 py-3 rounded-xl bg-gradient-to-r from-orange-400 to-red-500 text-white font-bold shadow-lg hover:shadow-xl hover:scale-105 transition-all">הוסף {amount} נקודות!</button>
-                        </div>
-                    </div>
-                </div>
-            );
-        };
-
-        const PinModal = ({ onClose, onSuccess, correctPin }) => {
-            const [pin, setPin] = useState("");
-            const [error, setError] = useState(false);
-            const handleNumber = (num) => { if (pin.length < 4) { setPin(prev => prev + num); setError(false); } };
-            const handleBackspace = () => setPin(prev => prev.slice(0, -1));
-            const handleSubmit = () => { if (pin === correctPin) { onSuccess(); } else { setError(true); setPin(""); } };
-            return (
-                <div className="fixed inset-0 z-[120] flex items-center justify-center p-4 bg-black/50 backdrop-blur-md animate-fade-in">
-                    <div className="bg-white w-full max-w-sm rounded-3xl shadow-2xl p-6 text-center">
-                        <div className="mb-6"><div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4"><Icons.Lock className="w-8 h-8 text-slate-500" /></div><h3 className="text-xl font-bold text-slate-800">קוד הורים</h3><p className="text-slate-500 text-sm">אנא הקש קוד גישה לביצוע פעולה זו</p></div>
-                        <div className="flex justify-center gap-4 mb-8">{[0, 1, 2, 3].map(i => (<div key={i} className={`w-4 h-4 rounded-full transition-all ${i < pin.length ? 'bg-blue-500 scale-110' : 'bg-slate-200'}`} />))}</div>
-                        {error && <p className="text-red-500 text-sm font-bold mb-4 animate-pulse">קוד שגוי, נסה שנית</p>}
-                        <div className="grid grid-cols-3 gap-3 mb-6">{[1, 2, 3, 4, 5, 6, 7, 8, 9].map(n => (<button key={n} onClick={() => handleNumber(n)} className="h-16 rounded-2xl bg-slate-50 hover:bg-slate-100 font-bold text-2xl text-slate-700 transition-colors shadow-sm">{n}</button>))}<div></div><button onClick={() => handleNumber(0)} className="h-16 rounded-2xl bg-slate-50 hover:bg-slate-100 font-bold text-2xl text-slate-700 transition-colors shadow-sm">0</button><button onClick={handleBackspace} className="h-16 rounded-2xl hover:bg-red-50 flex items-center justify-center text-slate-400 hover:text-red-500 transition-colors"><Icons.X className="w-6 h-6" /></button></div>
-                        <div className="flex gap-2"><button onClick={onClose} className="flex-1 py-3 rounded-xl bg-slate-100 font-bold text-slate-600 hover:bg-slate-200">ביטול</button><button onClick={handleSubmit} className="flex-1 py-3 rounded-xl bg-blue-600 font-bold text-white hover:bg-blue-700 shadow-md">אישור</button></div>
                     </div>
                 </div>
             );
@@ -510,13 +590,47 @@
                 }
             };
 
-            const handleAddTask = async (childId, newTaskText, taskType) => {
+            const handleAddTask = async (childId, newTaskText, taskType, addToAll) => {
                 if (!user) return;
                 const docRef = db.collection('artifacts').doc(appId).collection('public').doc('data').collection('family_project_v1').doc('status');
-                const currentTasks = tasksData[childId] || CHILDREN_DEFAULTS.find(c => c.id === childId).initialTasks;
-                const newTask = { id: `custom_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`, text: newTaskText, type: taskType, date: getTodayKey(), createdAt: Date.now() };
-                const updatedChildTasks = { ...tasksData, [childId]: [...currentTasks, newTask] };
-                await docRef.update({ childTasks: updatedChildTasks });
+                
+                let updates = {};
+                
+                const childrenToUpdate = addToAll ? CHILDREN_DEFAULTS.map(c => c.id) : [childId];
+                
+                childrenToUpdate.forEach(cid => {
+                    const currentTasks = tasksData[cid] || CHILDREN_DEFAULTS.find(c => c.id === cid).initialTasks;
+                    const newTask = { id: `custom_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`, text: newTaskText, type: taskType, date: getTodayKey(), createdAt: Date.now() };
+                    updates[`childTasks.${cid}`] = [...currentTasks, newTask];
+                });
+
+                await docRef.update(updates);
+            };
+
+            const handleEditTask = async (childId, taskId, newText, newType) => {
+                verifyParentAuth(async () => {
+                    if (!user) return;
+                    const docRef = db.collection('artifacts').doc(appId).collection('public').doc('data').collection('family_project_v1').doc('status');
+                    const currentTasks = tasksData[childId] || CHILDREN_DEFAULTS.find(c => c.id === childId).initialTasks;
+                    const updatedTasks = currentTasks.map(t => t.id === taskId ? { ...t, text: newText, type: newType } : t);
+                    await docRef.update({ [`childTasks.${childId}`]: updatedTasks });
+                });
+            };
+
+            const handleMoveTask = async (childId, taskId, direction) => {
+                if (!user) return;
+                const docRef = db.collection('artifacts').doc(appId).collection('public').doc('data').collection('family_project_v1').doc('status');
+                const currentTasks = [...(tasksData[childId] || CHILDREN_DEFAULTS.find(c => c.id === childId).initialTasks)];
+                const index = currentTasks.findIndex(t => t.id === taskId);
+                
+                if (index < 0) return;
+                if (direction === 'up' && index > 0) {
+                    [currentTasks[index], currentTasks[index - 1]] = [currentTasks[index - 1], currentTasks[index]];
+                } else if (direction === 'down' && index < currentTasks.length - 1) {
+                    [currentTasks[index], currentTasks[index + 1]] = [currentTasks[index + 1], currentTasks[index]];
+                }
+                
+                await docRef.update({ [`childTasks.${childId}`]: currentTasks });
             };
 
             const handleDeleteTask = async (childId, taskId) => {
@@ -611,7 +725,7 @@
                             );
                         })}
                     </div></main>
-                    {selectedChild && <TaskModal child={selectedChild} tasks={getChildTasks(selectedChild.id)} completedTasks={completedTasks} visuals={getChildVisuals(selectedChild.id)} onToggleTask={handleTaskToggle} onClose={() => setSelectedChild(null)} onAddTask={handleAddTask} onDeleteTask={handleDeleteTask} getTodayKey={getTodayKey} />}
+                    {selectedChild && <TaskModal child={selectedChild} tasks={getChildTasks(selectedChild.id)} completedTasks={completedTasks} visuals={getChildVisuals(selectedChild.id)} onToggleTask={handleTaskToggle} onClose={() => setSelectedChild(null)} onAddTask={handleAddTask} onDeleteTask={handleDeleteTask} onEditTask={handleEditTask} onMoveTask={handleMoveTask} getTodayKey={getTodayKey} />}
                     {editingChildId && <EditChildModal childId={editingChildId} initialSettings={getChildVisuals(editingChildId)} currentSettings={childSettings[editingChildId] || {}} onClose={() => setEditingChildId(null)} onSave={handleSaveSettings} childName={CHILDREN_DEFAULTS.find(c => c.id === editingChildId)?.name} />}
                     {showFamilyEditModal && <EditFamilyModal initialSettings={getFamilyVisuals()} currentSettings={familySettings} onClose={() => setShowFamilyEditModal(false)} onSave={handleSaveFamilySettings} />}
                     {showBonusModal && <BonusModal onClose={() => setShowBonusModal(false)} onConfirm={handleBonusPoint} />}
