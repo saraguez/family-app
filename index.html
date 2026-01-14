@@ -36,7 +36,7 @@
         const { useState, useEffect, useRef } = React;
 
         // --- FIREBASE CONFIGURATION ---
-        // 🔴 וודא שהמפתחות שלך מעודכנים כאן 🔴
+        // 🔴 PASTE YOUR FIREBASE KEYS HERE 🔴
         const firebaseConfig = {
             apiKey: "AIzaSyCET42vMcj1uC0nMsqsWy2xd-yv1WC7e68",
             authDomain: "family-tasks-ee68f.firebaseapp.com",
@@ -56,7 +56,7 @@
         const auth = firebase.auth();
         const db = firebase.firestore();
 
-        // 🟢🟢🟢 שינוי חשוב: שנה את השם הזה למשהו ייחודי (למשל: cohen-family-2024) 🟢🟢🟢
+        // 🟢🟢🟢 YOUR UNIQUE ID 🟢🟢🟢
         const appId = "CHANGE-THIS-TO-YOUR-UNIQUE-FAMILY-ID"; 
 
         // --- ICONS ---
@@ -109,7 +109,9 @@
             CheckSquare: (p) => <IconBase {...p}><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></IconBase>,
             ArrowUp: (p) => <IconBase {...p}><line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/></IconBase>,
             ArrowDown: (p) => <IconBase {...p}><line x1="12" y1="5" x2="12" y2="19"/><polyline points="19 12 12 19 5 12"/></IconBase>,
-            Save: (p) => <IconBase {...p}><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></IconBase>
+            Save: (p) => <IconBase {...p}><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></IconBase>,
+            Coins: (p) => <IconBase {...p}><circle cx="8" cy="8" r="6"/><path d="M18.09 10.37A6 6 0 1 1 10.34 18"/><path d="M7 6h1v4"/><path d="m7.1 13.8 3-3.8"/></IconBase>,
+            UserPlus: (p) => <IconBase {...p}><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/></IconBase>
         };
 
         const ICON_MAP = {
@@ -209,23 +211,122 @@
             return <canvas ref={canvasRef} className="fixed inset-0 pointer-events-none z-[100]" />;
         }
 
-        const BonusModal = ({ onClose, onConfirm }) => {
+        const BonusModal = ({ onClose, onConfirm, childrenData, childSettings }) => {
             const [amount, setAmount] = useState(1);
+            const [selectedChildId, setSelectedChildId] = useState(null); // null = family
+
+            const getChildAvatar = (child) => {
+                const settings = childSettings[child.id] || {};
+                const themeId = settings.themeId || child.defaultThemeId;
+                const theme = THEMES.find(t => t.id === themeId) || THEMES[0];
+                const useImage = settings.useImage; const image = settings.image; const useEmoji = settings.useEmoji; const emoji = settings.emoji || '😊'; const iconKey = settings.iconKey || child.defaultIconKey;
+                const IconComponent = ICON_MAP[iconKey] || Icons.Smile;
+                return { theme, useImage, image, useEmoji, emoji, IconComponent };
+            };
+
+            const handleConfirm = () => {
+                onConfirm(amount, selectedChildId);
+            };
+
             return (
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm animate-fade-in">
-                    <div className="bg-white w-full max-w-md rounded-3xl shadow-2xl p-6 text-center animate-scale-up">
+                    <div className="bg-white w-full max-w-md rounded-3xl shadow-2xl p-6 text-center animate-scale-up max-h-[90vh] overflow-y-auto">
                         <div className="mx-auto w-16 h-16 bg-gradient-to-br from-orange-400 to-red-500 rounded-full flex items-center justify-center mb-4 shadow-lg"><Icons.Sparkles className="w-8 h-8 text-white" /></div>
                         <h3 className="text-2xl font-bold text-slate-800 mb-2">הוספת בונוס</h3>
-                        <p className="text-slate-600 mb-6">כמה נקודות להוסיף למאמץ המשפחתי?</p>
-                        <div className="flex items-center justify-center gap-4 mb-8">
+                        
+                        {/* Child Selection Grid */}
+                        <div className="mb-6">
+                            <p className="text-slate-600 mb-3 font-bold text-sm">למי הבונוס?</p>
+                            <div className="grid grid-cols-3 gap-3">
+                                {/* Family Option */}
+                                <button 
+                                    onClick={() => setSelectedChildId(null)}
+                                    className={`flex flex-col items-center gap-1 p-2 rounded-xl border-2 transition-all ${selectedChildId === null ? 'border-orange-500 bg-orange-50 ring-2 ring-orange-200' : 'border-transparent hover:bg-slate-50'}`}
+                                >
+                                    <div className="w-10 h-10 rounded-full bg-yellow-100 flex items-center justify-center text-yellow-600">
+                                        <Icons.Trophy className="w-6 h-6" />
+                                    </div>
+                                    <span className="text-xs font-bold truncate w-full">המשפחה</span>
+                                </button>
+
+                                {/* Children Options */}
+                                {childrenData.map(child => {
+                                    const visuals = getChildAvatar(child);
+                                    const { theme } = visuals;
+                                    return (
+                                        <button 
+                                            key={child.id}
+                                            onClick={() => setSelectedChildId(child.id)}
+                                            className={`flex flex-col items-center gap-1 p-2 rounded-xl border-2 transition-all ${selectedChildId === child.id ? 'border-orange-500 bg-orange-50 ring-2 ring-orange-200' : 'border-transparent hover:bg-slate-50'}`}
+                                        >
+                                            <div className={`w-10 h-10 rounded-full ${theme.iconBg} flex items-center justify-center overflow-hidden`}>
+                                                {visuals.useImage && visuals.image ? 
+                                                    <img src={visuals.image} className="w-full h-full object-cover" /> : 
+                                                    (visuals.useEmoji ? <span className="text-lg">{visuals.emoji}</span> : <visuals.IconComponent className={`w-5 h-5 ${theme.iconText}`} />)
+                                                }
+                                            </div>
+                                            <span className="text-xs font-bold truncate w-full">{childSettings[child.id]?.name || child.name}</span>
+                                        </button>
+                                    );
+                                })}
+                            </div>
+                        </div>
+
+                        <div className="flex items-center justify-center gap-4 mb-6">
                             <button onClick={() => setAmount(Math.max(1, amount - 1))} className="w-12 h-12 rounded-full bg-slate-100 flex items-center justify-center text-slate-600 font-bold hover:bg-slate-200 transition-colors shadow-sm"><Icons.Minus className="w-6 h-6" /></button>
                             <div className="text-6xl font-black text-transparent bg-clip-text bg-gradient-to-r from-orange-500 to-red-600 w-24 tabular-nums">{amount}</div>
                             <button onClick={() => setAmount(Math.min(10, amount + 1))} className="w-12 h-12 rounded-full bg-slate-100 flex items-center justify-center text-slate-600 font-bold hover:bg-slate-200 transition-colors shadow-sm"><Icons.Plus className="w-6 h-6" /></button>
                         </div>
-                        <input type="range" min="1" max="10" value={amount} onChange={(e) => setAmount(parseInt(e.target.value))} className="w-full mb-8 accent-orange-500 h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer" />
+                        <input type="range" min="1" max="10" value={amount} onChange={(e) => setAmount(parseInt(e.target.value))} className="w-full mb-6 accent-orange-500 h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer" />
+                        
                         <div className="flex gap-4 justify-center">
                             <button onClick={onClose} className="px-6 py-3 rounded-xl border-2 border-slate-200 text-slate-600 font-bold hover:bg-slate-50 transition-colors">ביטול</button>
-                            <button onClick={() => onConfirm(amount)} className="px-8 py-3 rounded-xl bg-gradient-to-r from-orange-400 to-red-500 text-white font-bold shadow-lg hover:shadow-xl hover:scale-105 transition-all">הוסף {amount} נקודות!</button>
+                            <button onClick={handleConfirm} className="px-8 py-3 rounded-xl bg-gradient-to-r from-orange-400 to-red-500 text-white font-bold shadow-lg hover:shadow-xl hover:scale-105 transition-all">הוסף {amount} נקודות!</button>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        const CashOutModal = ({ onClose, onConfirm, currentBalance, childName }) => {
+            const [amount, setAmount] = useState(0);
+            
+            const handleConfirm = () => {
+                if (amount > 0 && amount <= currentBalance) {
+                    onConfirm(amount);
+                }
+            };
+
+            return (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm animate-fade-in">
+                    <div className="bg-white w-full max-w-sm rounded-3xl shadow-2xl p-6 text-center animate-scale-up">
+                        <div className="mx-auto w-16 h-16 bg-gradient-to-br from-green-400 to-emerald-600 rounded-full flex items-center justify-center mb-4 shadow-lg"><Icons.Coins className="w-8 h-8 text-white" /></div>
+                        <h3 className="text-2xl font-bold text-slate-800 mb-1">פדיון כסף</h3>
+                        <p className="text-slate-500 mb-6">עבור {childName}</p>
+                        
+                        <div className="bg-slate-50 rounded-xl p-4 mb-6 border border-slate-100">
+                            <p className="text-sm text-slate-500 mb-1">יתרה נוכחית</p>
+                            <p className="text-3xl font-black text-green-600">₪{currentBalance}</p>
+                        </div>
+
+                        <div className="mb-6">
+                            <label className="block text-sm font-bold text-slate-700 mb-2">כמה לפדות?</label>
+                            <div className="flex items-center justify-center gap-4">
+                                <button onClick={() => setAmount(Math.max(0, amount - 1))} className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center text-slate-600 font-bold hover:bg-slate-200"><Icons.Minus className="w-5 h-5" /></button>
+                                <div className="text-4xl font-bold text-slate-800 w-20 tabular-nums">₪{amount}</div>
+                                <button onClick={() => setAmount(Math.min(currentBalance, amount + 1))} className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center text-slate-600 font-bold hover:bg-slate-200"><Icons.Plus className="w-5 h-5" /></button>
+                            </div>
+                        </div>
+
+                        <div className="flex gap-3">
+                            <button onClick={onClose} className="flex-1 py-3 rounded-xl border-2 border-slate-200 text-slate-600 font-bold hover:bg-slate-50">ביטול</button>
+                            <button 
+                                onClick={handleConfirm} 
+                                disabled={amount === 0 || amount > currentBalance}
+                                className={`flex-1 py-3 rounded-xl font-bold text-white shadow-lg transition-all ${amount > 0 && amount <= currentBalance ? 'bg-green-600 hover:bg-green-700 hover:scale-105' : 'bg-slate-300 cursor-not-allowed'}`}
+                            >
+                                פדה כסף
+                            </button>
                         </div>
                     </div>
                 </div>
@@ -472,11 +573,36 @@
                             <div className="flex bg-slate-100 p-1 rounded-xl mb-4"><button onClick={() => setActiveTab('icon')} className={`flex-1 py-2 rounded-lg font-medium transition-all ${activeTab === 'icon' ? 'bg-white shadow text-slate-800' : 'text-slate-500 hover:text-slate-700'}`}>סמלים</button><button onClick={() => setActiveTab('emoji')} className={`flex-1 py-2 rounded-lg font-medium transition-all ${activeTab === 'emoji' ? 'bg-white shadow text-slate-800' : 'text-slate-500 hover:text-slate-700'}`}>אימוג'י</button><button onClick={() => setActiveTab('image')} className={`flex-1 py-2 rounded-lg font-medium transition-all flex items-center justify-center gap-2 ${activeTab === 'image' ? 'bg-white shadow text-slate-800' : 'text-slate-500 hover:text-slate-700'}`}><Icons.Camera className="w-4 h-4" />תמונה</button></div>
                             {activeTab === 'icon' && (<div className="grid grid-cols-5 gap-3">{Object.entries(ICON_MAP).map(([key, IconCmp]) => (<button key={key} onClick={() => setSelectedIconKey(key)} className={`aspect-square rounded-xl flex items-center justify-center border-2 transition-all ${selectedIconKey === key ? 'bg-blue-50 border-blue-500 text-blue-600' : 'bg-white border-slate-200 text-slate-400 hover:border-blue-200'}`}><IconCmp className="w-6 h-6" /></button>))}</div>)}
                             {activeTab === 'emoji' && (<div className="flex flex-col items-center p-4 bg-slate-50 rounded-xl border border-slate-200"><label className="text-sm text-slate-500 mb-2">הקלד או הדבק אימוג'י כאן:</label><input type="text" value={customEmoji} onChange={(e) => setCustomEmoji(e.target.value)} className="w-24 h-24 text-center text-6xl rounded-2xl border-2 border-slate-300 focus:border-blue-500 focus:ring-4 focus:ring-blue-100 outline-none bg-white" maxLength={2} /></div>)}
-                            {activeTab === 'image' && (<div className="flex flex-col items-center p-4 bg-slate-50 rounded-xl border border-slate-200"><div className="relative w-32 h-32 mb-4 group cursor-pointer">{customImage ? (<img src={customImage} alt="Preview" className="w-full h-full object-cover rounded-full border-4 border-white shadow-md" />) : (<div className="w-full h-full rounded-full bg-slate-200 flex items-center justify-center border-4 border-white shadow-md"><Icons.ImageIcon className="w-10 h-10 text-slate-400" /></div>)}<label htmlFor="file-upload-family" className="absolute inset-0 flex items-center justify-center bg-black/30 text-white opacity-0 group-hover:opacity-100 rounded-full transition-opacity cursor-pointer"><Icons.Upload className="w-8 h-8" /></label><input id="file-upload-family" type="file" accept="image/*" onChange={handleImageUpload} className="hidden" /></div>{isProcessingImage ? (<p className="text-sm text-blue-500 animate-pulse">מעבד תמונה...</p>) : (<label htmlFor="file-upload-family" className="px-4 py-2 bg-white border border-slate-300 rounded-lg text-sm font-medium hover:bg-slate-50 cursor-pointer">בחר תמונה</label>)}<p className="text-xs text-slate-400 mt-2 text-center">בחר תמונה מהמכשיר. התמונה תוקטן אוטומטית.</p></div>)}
+                            {activeTab === 'image' && (<div className="flex flex-col items-center p-4 bg-slate-50 rounded-xl border border-slate-200"><div className="relative w-32 h-32 mb-4 group cursor-pointer">{customImage ? (<img src={customImage} alt="Preview" className="w-full h-full object-cover rounded-full border-4 border-white shadow-md" />) : (<div className="w-full h-full rounded-full bg-slate-200 flex items-center justify-center border-4 border-white shadow-md"><Icons.ImageIcon className="w-10 h-10 text-slate-400" /></div>)}<label htmlFor="file-upload" className="absolute inset-0 flex items-center justify-center bg-black/30 text-white opacity-0 group-hover:opacity-100 rounded-full transition-opacity cursor-pointer"><Icons.Upload className="w-8 h-8" /></label><input id="file-upload" type="file" accept="image/*" onChange={handleImageUpload} className="hidden" /></div>{isProcessingImage ? (<p className="text-sm text-blue-500 animate-pulse">מעבד תמונה...</p>) : (<label htmlFor="file-upload" className="px-4 py-2 bg-white border border-slate-300 rounded-lg text-sm font-medium hover:bg-slate-50 cursor-pointer">בחר תמונה</label>)}<p className="text-xs text-slate-400 mt-2 text-center">בחר תמונה מהמכשיר. התמונה תוקטן אוטומטית.</p></div>)}
                         </div>
                     </div>
                     <div className="p-6 border-t border-slate-100 bg-slate-50 flex justify-end gap-3"><button onClick={onClose} className="px-5 py-2.5 rounded-xl font-bold text-slate-500 hover:bg-slate-200 transition-colors">ביטול</button><button onClick={handleSave} className="px-8 py-2.5 rounded-xl font-bold text-white bg-blue-600 hover:bg-blue-700 shadow-lg shadow-blue-200 transition-all">שמור שינויים</button></div>
                 </div>
+                </div>
+            );
+        };
+
+        const AddChildModal = ({ onClose, onSave }) => {
+            const [name, setName] = useState("");
+            const [selectedThemeId, setSelectedThemeId] = useState("yellow");
+            const [selectedIconKey, setSelectedIconKey] = useState("smile");
+
+            const handleSave = () => {
+                if (!name.trim()) return;
+                onSave({ name, defaultThemeId: selectedThemeId, defaultIconKey: selectedIconKey });
+            };
+
+            return (
+                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-fade-in">
+                    <div className="bg-white w-full max-w-lg rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
+                        <div className="p-6 border-b border-slate-100 flex justify-between items-center bg-slate-50"><h3 className="text-xl font-bold text-slate-800">הוספת ילד חדש</h3><button onClick={onClose} className="p-2 hover:bg-slate-200 rounded-full"><Icons.X className="w-5 h-5" /></button></div>
+                        <div className="p-6 overflow-y-auto flex-1">
+                            <div className="mb-6"><h4 className="flex items-center gap-2 font-bold text-slate-700 mb-3"><Icons.Type className="w-5 h-5 text-slate-500" />שם הילד</h4><input type="text" value={name} onChange={(e) => setName(e.target.value)} className="w-full p-3 rounded-xl border border-slate-300 focus:border-blue-500 focus:ring-4 focus:ring-blue-100 outline-none text-lg" placeholder="הכנס שם..." autoFocus /></div>
+                            <div className="mb-8"><h4 className="flex items-center gap-2 font-bold text-slate-700 mb-3"><Icons.Palette className="w-5 h-5 text-purple-500" />בחר צבע</h4><div className="flex flex-wrap gap-3">{THEMES.map(theme => (<button key={theme.id} onClick={() => setSelectedThemeId(theme.id)} className={`w-10 h-10 rounded-full border-2 flex items-center justify-center transition-all ${theme.classes.split(' ')[0]} ${selectedThemeId === theme.id ? 'border-slate-800 scale-110 shadow-md ring-2 ring-slate-200' : 'border-transparent'}`}>{selectedThemeId === theme.id && <Icons.Check className={`w-5 h-5 ${theme.classes.split(' ')[1]}`} />}</button>))}</div></div>
+                            <div><h4 className="flex items-center gap-2 font-bold text-slate-700 mb-3"><Icons.Smile className="w-5 h-5 text-orange-500" />בחר סמל</h4><div className="grid grid-cols-5 gap-3">{Object.entries(ICON_MAP).map(([key, IconCmp]) => (<button key={key} onClick={() => setSelectedIconKey(key)} className={`aspect-square rounded-xl flex items-center justify-center border-2 transition-all ${selectedIconKey === key ? 'bg-blue-50 border-blue-500 text-blue-600' : 'bg-white border-slate-200 text-slate-400 hover:border-blue-200'}`}><IconCmp className="w-6 h-6" /></button>))}</div></div>
+                        </div>
+                        <div className="p-6 border-t border-slate-100 bg-slate-50 flex justify-end gap-3"><button onClick={onClose} className="px-5 py-2.5 rounded-xl font-bold text-slate-500 hover:bg-slate-200 transition-colors">ביטול</button><button onClick={handleSave} className="px-8 py-2.5 rounded-xl font-bold text-white bg-blue-600 hover:bg-blue-700 shadow-lg shadow-blue-200 transition-all">שמור</button></div>
+                    </div>
                 </div>
             );
         };
@@ -489,7 +615,8 @@
             const [familySettings, setFamilySettings] = useState({});
             const [tasksData, setTasksData] = useState({});
             const [history, setHistory] = useState([]);
-            const [childScores, setChildScores] = useState({}); // New state for individual scores
+            const [childScores, setChildScores] = useState({});
+            const [childrenList, setChildrenList] = useState(CHILDREN_DEFAULTS); // State for Children
 
             const [selectedChild, setSelectedChild] = useState(null);
             const [editingChildId, setEditingChildId] = useState(null);
@@ -498,6 +625,10 @@
             const [showWinModal, setShowWinModal] = useState(false);
             const [showHistoryModal, setShowHistoryModal] = useState(false);
             const [showPinModal, setShowPinModal] = useState(false);
+            const [showCashOutModal, setShowCashOutModal] = useState(false);
+            const [showAddChildModal, setShowAddChildModal] = useState(false); // Add Child Modal
+            const [cashOutChildId, setCashOutChildId] = useState(null);
+
             const [pendingAction, setPendingAction] = useState(null);
             const [animationClass, setAnimationClass] = useState('');
             const [showConfetti, setShowConfetti] = useState(false);
@@ -534,9 +665,10 @@
                         setFamilySettings(data.familySettings || {});
                         setTasksData(data.childTasks || {});
                         setHistory(data.history || []);
-                        setChildScores(data.childScores || {}); // Load child scores
+                        setChildScores(data.childScores || {});
+                        if (data.childrenList) setChildrenList(data.childrenList); // Load children list
                     } else {
-                        docRef.set({ points: 0, completedTasks: {}, childSettings: {}, familySettings: {}, childTasks: {}, history: [], childScores: {} });
+                        docRef.set({ points: 0, completedTasks: {}, childSettings: {}, familySettings: {}, childTasks: {}, history: [], childScores: {}, childrenList: CHILDREN_DEFAULTS });
                     }
                 });
                 return () => unsubscribe();
@@ -548,7 +680,9 @@
 
             const getTodayKey = () => { const d = new Date(); return `${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}`; };
             const getChildVisuals = (childId) => {
-                const childDefault = CHILDREN_DEFAULTS.find(c => c.id === childId);
+                const childDefault = childrenList.find(c => c.id === childId) || CHILDREN_DEFAULTS.find(c => c.id === childId);
+                if (!childDefault) return { theme: THEMES[0], IconComponent: Icons.Smile, useImage: false, image: null, name: 'Unknown' };
+
                 const settings = childSettings[childId] || {};
                 const themeId = settings.themeId || childDefault.defaultThemeId;
                 const theme = THEMES.find(t => t.id === themeId) || THEMES[0];
@@ -562,7 +696,8 @@
                     const today = getTodayKey(); const dayOfWeek = new Date().getDay();
                     return tasksData[childId].filter(t => t.type === 'daily' || t.type === 'morning' || t.type === 'evening' || (t.type === 'one-time' && t.date === today) || (t.type === 'friday' && dayOfWeek === 5));
                 }
-                return CHILDREN_DEFAULTS.find(c => c.id === childId)?.initialTasks || [];
+                const childDefault = childrenList.find(c => c.id === childId);
+                return childDefault ? (childDefault.initialTasks || []) : [];
             };
             const getFamilyVisuals = () => {
                 const settings = familySettings || {}; const themeId = settings.themeId || FAMILY_DEFAULT.defaultThemeId;
@@ -585,14 +720,17 @@
                 await docRef.update({ history: updatedHistory });
             };
 
-            // New function to delete history entry
             const handleDeleteHistoryEntry = (index) => {
                 verifyParentAuth(async () => {
                     if (!user) return;
+                    const item = history[index];
                     const newHistory = [...history];
                     newHistory.splice(index, 1);
                     const docRef = db.collection('artifacts').doc(appId).collection('public').doc('data').collection('family_project_v1').doc('status');
-                    await docRef.update({ history: newHistory });
+                    await docRef.update({ 
+                        history: newHistory,
+                        points: firebase.firestore.FieldValue.increment(-item.diff)
+                    });
                 });
             };
 
@@ -609,25 +747,19 @@
                 const docRef = db.collection('artifacts').doc(appId).collection('public').doc('data').collection('family_project_v1').doc('status');
                 const childName = getChildVisuals(childId).name;
                 
-                // Prepare updates
                 const updates = {};
                 
                 if (isAlreadyDone) {
                     updates.points = firebase.firestore.FieldValue.increment(-1);
                     updates[`completedTasks.${taskKey}`] = false;
-                    // Decrease child score
                     updates[`childScores.${childId}`] = firebase.firestore.FieldValue.increment(-1);
-                    
                     await docRef.update(updates);
                     addToHistoryLog(`ביטול: ${taskText || 'משימה'} (${childName})`, -1);
                 } else {
                     playSuccessSound(); triggerConfetti();
-                    
                     updates.points = firebase.firestore.FieldValue.increment(1);
                     updates[`completedTasks.${taskKey}`] = true;
-                    // Increase child score
                     updates[`childScores.${childId}`] = firebase.firestore.FieldValue.increment(1);
-                    
                     await docRef.update(updates);
                     addToHistoryLog(`משימה: ${taskText || 'משימה'} (${childName})`, 1);
                 }
@@ -636,17 +768,13 @@
             const handleAddTask = async (childId, newTaskText, taskType, addToAll) => {
                 if (!user) return;
                 const docRef = db.collection('artifacts').doc(appId).collection('public').doc('data').collection('family_project_v1').doc('status');
-                
                 let updates = {};
-                
-                const childrenToUpdate = addToAll ? CHILDREN_DEFAULTS.map(c => c.id) : [childId];
-                
+                const childrenToUpdate = addToAll ? childrenList.map(c => c.id) : [childId];
                 childrenToUpdate.forEach(cid => {
-                    const currentTasks = tasksData[cid] || CHILDREN_DEFAULTS.find(c => c.id === cid).initialTasks;
+                    const currentTasks = tasksData[cid] || (childrenList.find(c => c.id === cid)?.initialTasks || []);
                     const newTask = { id: `custom_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`, text: newTaskText, type: taskType, date: getTodayKey(), createdAt: Date.now() };
                     updates[`childTasks.${cid}`] = [...currentTasks, newTask];
                 });
-
                 await docRef.update(updates);
             };
 
@@ -654,7 +782,7 @@
                 verifyParentAuth(async () => {
                     if (!user) return;
                     const docRef = db.collection('artifacts').doc(appId).collection('public').doc('data').collection('family_project_v1').doc('status');
-                    const currentTasks = tasksData[childId] || CHILDREN_DEFAULTS.find(c => c.id === childId).initialTasks;
+                    const currentTasks = tasksData[childId] || (childrenList.find(c => c.id === childId)?.initialTasks || []);
                     const updatedTasks = currentTasks.map(t => t.id === taskId ? { ...t, text: newText, type: newType } : t);
                     await docRef.update({ [`childTasks.${childId}`]: updatedTasks });
                 });
@@ -663,16 +791,14 @@
             const handleMoveTask = async (childId, taskId, direction) => {
                 if (!user) return;
                 const docRef = db.collection('artifacts').doc(appId).collection('public').doc('data').collection('family_project_v1').doc('status');
-                const currentTasks = [...(tasksData[childId] || CHILDREN_DEFAULTS.find(c => c.id === childId).initialTasks)];
+                const currentTasks = [...(tasksData[childId] || (childrenList.find(c => c.id === childId)?.initialTasks || []))];
                 const index = currentTasks.findIndex(t => t.id === taskId);
-                
                 if (index < 0) return;
                 if (direction === 'up' && index > 0) {
                     [currentTasks[index], currentTasks[index - 1]] = [currentTasks[index - 1], currentTasks[index]];
                 } else if (direction === 'down' && index < currentTasks.length - 1) {
                     [currentTasks[index], currentTasks[index + 1]] = [currentTasks[index + 1], currentTasks[index]];
                 }
-                
                 await docRef.update({ [`childTasks.${childId}`]: currentTasks });
             };
 
@@ -680,25 +806,31 @@
                 verifyParentAuth(async () => {
                     if (!user) return;
                     const docRef = db.collection('artifacts').doc(appId).collection('public').doc('data').collection('family_project_v1').doc('status');
-                    const currentTasks = tasksData[childId] || CHILDREN_DEFAULTS.find(c => c.id === childId).initialTasks;
+                    const currentTasks = tasksData[childId] || (childrenList.find(c => c.id === childId)?.initialTasks || []);
                     const updatedChildTasks = { ...tasksData, [childId]: currentTasks.filter(t => t.id !== taskId) };
                     await docRef.update({ childTasks: updatedChildTasks });
                 });
             };
 
-            const handleBonusPoint = async (amount = 1) => {
+            const handleBonusPoint = async (amount = 1, childId = null) => {
                 if (!user) return; playSuccessSound(); triggerConfetti();
                 const docRef = db.collection('artifacts').doc(appId).collection('public').doc('data').collection('family_project_v1').doc('status');
-                await docRef.update({ points: firebase.firestore.FieldValue.increment(amount) });
-                addToHistoryLog(`בונוס משפחתי`, amount);
+                const updates = { points: firebase.firestore.FieldValue.increment(amount) };
+                let logMessage = `בונוס משפחתי`;
+                if (childId) {
+                    updates[`childScores.${childId}`] = firebase.firestore.FieldValue.increment(amount);
+                    const childName = getChildVisuals(childId).name;
+                    logMessage = `בונוס ל${childName}`;
+                }
+                await docRef.update(updates);
+                addToHistoryLog(logMessage, amount);
                 setShowBonusModal(false);
             };
 
             const handleSaveSettings = async (childId, newSettings) => {
                 if (!user) return;
                 const docRef = db.collection('artifacts').doc(appId).collection('public').doc('data').collection('family_project_v1').doc('status');
-                const updatedChildSettings = { ...childSettings, [childId]: { ...childSettings[childId], ...newSettings } };
-                await docRef.update({ childSettings: updatedChildSettings });
+                await docRef.update({ childSettings: { ...childSettings, [childId]: { ...childSettings[childId], ...newSettings } } });
                 setEditingChildId(null);
             };
 
@@ -713,11 +845,36 @@
                 verifyParentAuth(async () => {
                     if (!user) return;
                     const docRef = db.collection('artifacts').doc(appId).collection('public').doc('data').collection('family_project_v1').doc('status');
-                    // Reset family points AND all child scores
                     await docRef.update({ points: 0, childScores: {} });
                     addToHistoryLog('איפוס נקודות', -points);
                     setShowWinModal(false);
                 });
+            };
+            
+            const handleCashOut = async (amount) => {
+                if (!user || !cashOutChildId) return;
+                const pointsToDeduct = amount * 5;
+                const docRef = db.collection('artifacts').doc(appId).collection('public').doc('data').collection('family_project_v1').doc('status');
+                const childName = getChildVisuals(cashOutChildId).name;
+                await docRef.update({ [`childScores.${cashOutChildId}`]: firebase.firestore.FieldValue.increment(-pointsToDeduct) });
+                addToHistoryLog(`פדיון כסף עבור ${childName}: ₪${amount}`, 0); 
+                setShowCashOutModal(false);
+                setCashOutChildId(null);
+            };
+
+            const handleAddChild = async (newChildData) => {
+                if (!user) return;
+                const docRef = db.collection('artifacts').doc(appId).collection('public').doc('data').collection('family_project_v1').doc('status');
+                const newChild = {
+                    id: `child_${Date.now()}`,
+                    name: newChildData.name,
+                    defaultThemeId: newChildData.defaultThemeId,
+                    defaultIconKey: newChildData.defaultIconKey,
+                    initialTasks: []
+                };
+                const updatedList = [...childrenList, newChild];
+                await docRef.update({ childrenList: updatedList });
+                setShowAddChildModal(false);
             };
 
             const createLongPressHandlers = (callback, onClick) => ({
@@ -753,20 +910,21 @@
                         </div>
                     </header>
                     <main className="max-w-6xl mx-auto p-6"><div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-6 mt-4">
-                        {CHILDREN_DEFAULTS.map((child) => {
+                        {childrenList.map((child) => {
                             const { theme, IconComponent, useEmoji, emoji, useImage, image, name } = getChildVisuals(child.id);
                             const currentTasks = getChildTasks(child.id);
-                            // Get score from state, default to 0
                             const currentScore = childScores[child.id] || 0;
+                            const money = Math.floor(currentScore / 5);
 
                             return (
                                 <div key={child.id} className={`group relative bg-white rounded-3xl p-6 border-4 ${theme.classes.split(' ')[2]} shadow-md hover:shadow-xl hover:-translate-y-2 transition-all duration-300 flex flex-col items-center justify-center gap-4 h-64 select-none`} {...createLongPressHandlers(() => setEditingChildId(child.id), () => setSelectedChild(child))}>
                                     <button onClick={(e) => { e.stopPropagation(); verifyParentAuth(() => setEditingChildId(child.id)); }} className="absolute top-2 right-2 p-2 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-400 hover:text-slate-600 transition-colors opacity-0 group-hover:opacity-100 z-10" title="עריכת עיצוב"><Icons.Settings className="w-4 h-4" /></button>
                                     
-                                    {/* Personal Score Badge */}
                                     <div className="absolute top-0 left-0 -mt-3 -ml-3 bg-gradient-to-br from-yellow-400 to-orange-500 text-white w-10 h-10 flex items-center justify-center rounded-full shadow-lg font-bold border-2 border-white z-20">
                                         {currentScore}
                                     </div>
+                                    
+                                    <button onClick={(e) => { e.stopPropagation(); setCashOutChildId(child.id); verifyParentAuth(() => setShowCashOutModal(true)); }} className="absolute top-0 left-9 -mt-3 ml-1 bg-gradient-to-br from-green-400 to-emerald-600 text-white w-12 h-8 flex items-center justify-center rounded-full shadow-lg font-bold border-2 border-white z-20 gap-0.5 text-sm hover:scale-110 transition-transform">₪{money}</button>
 
                                     <div className="flex flex-col items-center justify-center w-full h-full cursor-pointer">
                                         <div className={`w-24 h-24 rounded-full ${theme.iconBg} flex items-center justify-center shadow-inner group-hover:scale-110 transition-transform overflow-hidden relative`}>{useImage && image ? <img src={image} alt={name} className="w-full h-full object-cover" /> : useEmoji ? <span className="text-5xl leading-none select-none">{emoji}</span> : <IconComponent className={`w-10 h-10 ${theme.iconText}`} />}</div>
@@ -777,26 +935,23 @@
                                 </div>
                             );
                         })}
+                        {/* ADD CHILD CARD */}
+                        <button onClick={() => verifyParentAuth(() => setShowAddChildModal(true))} className="group relative bg-slate-50 border-4 border-dashed border-slate-300 rounded-3xl p-6 shadow-sm hover:shadow-lg hover:border-slate-400 hover:-translate-y-2 transition-all duration-300 flex flex-col items-center justify-center gap-4 h-64">
+                            <div className="w-20 h-20 rounded-full bg-slate-200 flex items-center justify-center text-slate-400 group-hover:bg-slate-300 group-hover:text-slate-600 transition-colors">
+                                <Icons.UserPlus className="w-10 h-10" />
+                            </div>
+                            <h2 className="text-xl font-bold text-slate-400 group-hover:text-slate-600">הוסף ילד</h2>
+                        </button>
                     </div></main>
                     {selectedChild && <TaskModal child={selectedChild} tasks={getChildTasks(selectedChild.id)} completedTasks={completedTasks} visuals={getChildVisuals(selectedChild.id)} onToggleTask={handleTaskToggle} onClose={() => setSelectedChild(null)} onAddTask={handleAddTask} onDeleteTask={handleDeleteTask} onEditTask={handleEditTask} onMoveTask={handleMoveTask} getTodayKey={getTodayKey} />}
-                    {editingChildId && <EditChildModal childId={editingChildId} initialSettings={getChildVisuals(editingChildId)} currentSettings={childSettings[editingChildId] || {}} onClose={() => setEditingChildId(null)} onSave={handleSaveSettings} childName={CHILDREN_DEFAULTS.find(c => c.id === editingChildId)?.name} />}
+                    {editingChildId && <EditChildModal childId={editingChildId} initialSettings={getChildVisuals(editingChildId)} currentSettings={childSettings[editingChildId] || {}} onClose={() => setEditingChildId(null)} onSave={handleSaveSettings} childName={childrenList.find(c => c.id === editingChildId)?.name} />}
                     {showFamilyEditModal && <EditFamilyModal initialSettings={getFamilyVisuals()} currentSettings={familySettings} onClose={() => setShowFamilyEditModal(false)} onSave={handleSaveFamilySettings} />}
-                    {showBonusModal && <BonusModal onClose={() => setShowBonusModal(false)} onConfirm={handleBonusPoint} />}
+                    {showBonusModal && <BonusModal onClose={() => setShowBonusModal(false)} onConfirm={handleBonusPoint} childrenData={childrenList} childSettings={childSettings} />}
                     {showWinModal && (<div className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-black/60 backdrop-blur-md animate-fade-in"><div className="bg-white w-full max-w-lg rounded-[2.5rem] shadow-2xl p-8 text-center animate-scale-up border-8 border-yellow-300 relative overflow-hidden"><div className="absolute top-0 left-0 w-full h-32 bg-yellow-100 rounded-b-[50%] -translate-y-16"></div><div className="relative z-10"><div className="mx-auto w-32 h-32 bg-gradient-to-b from-yellow-300 to-yellow-500 rounded-full flex items-center justify-center mb-6 shadow-xl border-4 border-white animate-bounce"><Icons.Trophy className="w-16 h-16 text-white drop-shadow-md" /></div><h2 className="text-5xl font-black text-slate-800 mb-2 tracking-tight">כל הכבוד!</h2><h3 className="text-2xl font-bold text-slate-600 mb-6">הגעתם ליעד של {targetPoints} נקודות!</h3><div className="p-4 bg-yellow-50 rounded-2xl mb-8 border-2 border-yellow-200"><p className="text-yellow-800 text-lg">"יגעת ומצאת תאמין!"</p><p className="text-yellow-700 font-bold mt-1">המשיכו כך!</p></div><button onClick={handleResetPoints} className="w-full py-4 rounded-2xl bg-gradient-to-r from-blue-500 to-blue-600 text-white font-bold text-xl shadow-xl hover:shadow-2xl hover:scale-[1.02] transition-all flex items-center justify-center gap-2 group"><Icons.RotateCcw className="w-6 h-6 group-hover:rotate-180 transition-transform duration-500" />אפס נקודות והתחל מחדש</button></div></div></div>)}
-                    
-                    {/* History Modal with Delete Option */}
-                    {showHistoryModal && (<div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm animate-fade-in"><div className="bg-white w-full max-w-md rounded-3xl shadow-2xl flex flex-col max-h-[80vh]"><div className="p-5 border-b border-slate-100 flex justify-between items-center bg-slate-50"><h3 className="text-xl font-bold text-slate-800 flex items-center gap-2"><Icons.History className="w-5 h-5 text-blue-500"/>היסטוריית נקודות</h3><button onClick={() => setShowHistoryModal(false)} className="p-2 hover:bg-slate-200 rounded-full"><Icons.X className="w-5 h-5" /></button></div><div className="overflow-y-auto p-4 flex-1 space-y-3">{history.length === 0 ? (<p className="text-center text-slate-400 py-10">אין עדיין היסטוריה</p>) : (history.map((item, i) => (<div key={i} className="flex justify-between items-center p-3 bg-slate-50 rounded-xl border border-slate-100">
-                        <div className="flex-1">
-                            <p className="font-bold text-slate-700">{item.text}</p>
-                            <p className="text-xs text-slate-400">{new Date(item.timestamp).toLocaleTimeString('he-IL', {hour: '2-digit', minute:'2-digit'})} • {new Date(item.timestamp).toLocaleDateString('he-IL')}</p>
-                        </div>
-                        <div className="flex items-center gap-3">
-                            <span className={`font-bold dir-ltr ${item.diff > 0 ? 'text-green-600' : 'text-red-500'}`}>{item.diff > 0 ? '+' : ''}{item.diff}</span>
-                            <button onClick={() => handleDeleteHistoryEntry(i)} className="p-1.5 bg-red-50 text-red-400 rounded-lg hover:bg-red-100 hover:text-red-600 transition-colors"><Icons.Trash2 className="w-4 h-4" /></button>
-                        </div>
-                    </div>)))}</div></div></div>)}
-                    
+                    {showHistoryModal && (<div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm animate-fade-in"><div className="bg-white w-full max-w-md rounded-3xl shadow-2xl flex flex-col max-h-[80vh]"><div className="p-5 border-b border-slate-100 flex justify-between items-center bg-slate-50"><h3 className="text-xl font-bold text-slate-800 flex items-center gap-2"><Icons.History className="w-5 h-5 text-blue-500"/>היסטוריית נקודות</h3><button onClick={() => setShowHistoryModal(false)} className="p-2 hover:bg-slate-200 rounded-full"><Icons.X className="w-5 h-5" /></button></div><div className="overflow-y-auto p-4 flex-1 space-y-3">{history.length === 0 ? (<p className="text-center text-slate-400 py-10">אין עדיין היסטוריה</p>) : (history.map((item, i) => (<div key={i} className="flex justify-between items-center p-3 bg-slate-50 rounded-xl border border-slate-100"><div className="flex-1"><p className="font-bold text-slate-700">{item.text}</p><p className="text-xs text-slate-400">{new Date(item.timestamp).toLocaleTimeString('he-IL', {hour: '2-digit', minute:'2-digit'})} • {new Date(item.timestamp).toLocaleDateString('he-IL')}</p></div><div className="flex items-center gap-3"><span className={`font-bold dir-ltr ${item.diff > 0 ? 'text-green-600' : 'text-red-500'}`}>{item.diff > 0 ? '+' : ''}{item.diff}</span><button onClick={() => handleDeleteHistoryEntry(i)} className="p-1.5 bg-red-50 text-red-400 rounded-lg hover:bg-red-100 hover:text-red-600 transition-colors"><Icons.Trash2 className="w-4 h-4" /></button></div></div>)))}</div></div></div>)}
                     {showPinModal && <PinModal onClose={() => setShowPinModal(false)} onSuccess={handlePinSuccess} correctPin={parentPin} />}
+                    {showCashOutModal && <CashOutModal onClose={() => setShowCashOutModal(false)} onConfirm={handleCashOut} currentBalance={Math.floor((childScores[cashOutChildId] || 0) / 5)} childName={getChildVisuals(cashOutChildId).name} />}
+                    {showAddChildModal && <AddChildModal onClose={() => setShowAddChildModal(false)} onSave={handleAddChild} />}
                 </div>
             );
         };
