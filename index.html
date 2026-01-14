@@ -837,7 +837,9 @@
                 const settings = childSettings[childId] || {};
                 const themeId = settings.themeId || childDefault.defaultThemeId;
                 const theme = THEMES.find(t => t.id === themeId) || THEMES[0];
-                const useImage = settings.useImage; const image = settings.image; const useEmoji = settings.useEmoji; const emoji = settings.emoji || '😊'; const iconKey = settings.iconKey || child.defaultIconKey;
+                const useImage = settings.useImage; const image = settings.image; const useEmoji = settings.useEmoji; const emoji = settings.emoji || '😊'; 
+                // Fix: use childDefault instead of child
+                const iconKey = settings.iconKey || childDefault.defaultIconKey; 
                 const IconComponent = ICON_MAP[iconKey] || Icons.Smile;
                 const name = settings.name || childDefault.name;
                 return { theme, IconComponent, useEmoji, emoji, useImage, image, name };
