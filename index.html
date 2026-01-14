@@ -157,11 +157,26 @@
         ];
 
         const CHILDREN_DEFAULTS = [
-            { id: 'mushka', name: 'חיה מושקא', defaultThemeId: 'yellow', defaultIconKey: 'home', initialTasks: [{ id: 'def_mushka_1', text: 'רצפה', type: 'evening' }] },
-            { id: 'dvora', name: 'דבורה לאה', defaultThemeId: 'pink', defaultIconKey: 'utensils', initialTasks: [{ id: 'def_dvora_1', text: 'כלים חלבי ושיש', type: 'evening' }] },
-            { id: 'rivka', name: 'רבקה', defaultThemeId: 'purple', defaultIconKey: 'utensils', initialTasks: [{ id: 'def_rivka_1', text: 'לפנות שולחן', type: 'evening' }, { id: 'def_rivka_2', text: 'לערוך לארוחת ערב', type: 'evening' }] },
-            { id: 'shmuel', name: 'שמואל', defaultThemeId: 'blue', defaultIconKey: 'shirt', initialTasks: [{ id: 'def_shmuel_1', text: 'לפנות את הספה', type: 'evening' }, { id: 'def_shmuel_2', text: 'לאסוף בגדים מלוכלכים לכביסה', type: 'evening' }] },
-            { id: 'pitzo', name: 'יוסף יצחק', defaultThemeId: 'green', defaultIconKey: 'gamepad', initialTasks: [{ id: 'def_pitzo_1', text: 'לאסוף משחקים', type: 'evening' }, { id: 'def_pitzo_2', text: 'לאסוף נעליים', type: 'evening' }] }
+            { 
+                id: 'daughter', 
+                name: 'בת', 
+                defaultThemeId: 'pink', 
+                defaultIconKey: 'smile', 
+                initialTasks: [
+                    { id: 'task_d1', text: 'לסדר את המיטה', type: 'morning' },
+                    { id: 'task_d2', text: 'לצחצח שיניים', type: 'evening' }
+                ] 
+            },
+            { 
+                id: 'son', 
+                name: 'בן', 
+                defaultThemeId: 'blue', 
+                defaultIconKey: 'smile', 
+                initialTasks: [
+                    { id: 'task_s1', text: 'לסדר את המיטה', type: 'morning' },
+                    { id: 'task_s2', text: 'לצחצח שיניים', type: 'evening' }
+                ] 
+            }
         ];
 
         const FAMILY_DEFAULT = { defaultThemeId: 'yellow', defaultIconKey: 'trophy', defaultTitle: 'המבצע המשפחתי', defaultTarget: 100 };
