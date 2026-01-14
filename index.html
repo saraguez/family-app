@@ -3,11 +3,30 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>המבצע המשפחתי</title>
+    <title>המבצע המשפחתי - התחברות</title>
     
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🏆</text></svg>">
-    <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🏆</text></svg>">
+    <!-- ERROR HANDLER: This will show you why the screen is blank -->
+    <script>
+        window.onerror = function(msg, url, lineNo, columnNo, error) {
+            const container = document.getElementById('root') || document.body;
+            container.innerHTML = `
+                <div style="background:#fee2e2; color:#991b1b; p:20px; font-family:sans-serif; direction:ltr; text-align:left; padding:20px; margin:20px; border-radius:10px; border: 2px solid #ef4444;">
+                    <h2 style="font-size:24px; font-weight:bold; margin-bottom:10px;">⚠️ App Crashed</h2>
+                    <p style="font-weight:bold;">Error: ${msg}</p>
+                    <p>Line: ${lineNo}</p>
+                    <hr style="border-color:#fca5a5; margin:10px 0;"/>
+                    <p><strong>Common Fixes:</strong></p>
+                    <ul style="list-style-type:disc; margin-left:20px;">
+                        <li>Did you paste your <strong>Firebase Config</strong> keys correctly?</li>
+                        <li>Are you running this via <strong>http://localhost</strong> (Live Server)? Google Login blocks file://.</li>
+                    </ul>
+                </div>
+            `;
+            return false;
+        };
+    </script>
 
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🏆</text></svg>">
     <script src="https://cdn.tailwindcss.com"></script>
     <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
@@ -25,7 +44,6 @@
         .animate-fade-in { animation: fade-in 0.2s ease-out; }
         .animate-slide-up { animation: slide-up 0.3s cubic-bezier(0.16, 1, 0.3, 1); }
         .animate-scale-up { animation: scale-up 0.2s cubic-bezier(0.16, 1, 0.3, 1); }
-        ::-webkit-scrollbar { width: 0px; background: transparent; }
         body { -webkit-tap-highlight-color: transparent; }
     </style>
 </head>
@@ -35,27 +53,40 @@
     <script type="text/babel">
         const { useState, useEffect, useRef } = React;
 
-        // --- FIREBASE CONFIGURATION ---
+        // --- 🔴 PASTE YOUR FIREBASE KEYS HERE 🔴 ---
         const firebaseConfig = {
-            apiKey: "AIzaSyCET42vMcj1uC0nMsqsWy2xd-yv1WC7e68",
-            authDomain: "family-tasks-ee68f.firebaseapp.com",
-            projectId: "family-tasks-ee68f",
-            storageBucket: "family-tasks-ee68f.firebasestorage.app",
-            messagingSenderId: "579816138584",
-            appId: "1:579816138584:web:1b2a3cbf4c5fd00a45e72d"
-        };
+  apiKey: "AIzaSyCET42vMcj1uC0nMsqsWy2xd-yv1WC7e68",
+  authDomain: "family-tasks-ee68f.firebaseapp.com",
+  projectId: "family-tasks-ee68f",
+  storageBucket: "family-tasks-ee68f.firebasestorage.app",
+  messagingSenderId: "579816138584",
+  appId: "1:579816138584:web:1b2a3cbf4c5fd00a45e72d"
+};
+        // ---------------------------------------------
 
+        // Initialize Firebase safely
         if (!firebase.apps.length) {
             try {
+                if (firebaseConfig.apiKey === "PASTE_YOUR_API_KEY_HERE") {
+                    throw new Error("You must paste your real Firebase Config keys in the code!");
+                }
                 firebase.initializeApp(firebaseConfig);
             } catch(e) {
-                console.error("Firebase init error", e);
+                console.error("Firebase Init Error:", e);
+                // We re-throw so the window.onerror catches it and shows it to the user
+                throw e; 
             }
         }
+        
         const auth = firebase.auth();
         const db = firebase.firestore();
 
-        // --- ICONS ---
+        // Check if running on file:// protocol
+        if (window.location.protocol === 'file:') {
+            throw new Error("Google Login does not work on 'file://'. Please use a Local Server (like VS Code Live Server).");
+        }
+
+        // --- ICONS & HELPERS ---
         const IconBase = ({ children, className, ...props }) => (
             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className} {...props}>{children}</svg>
         );
@@ -67,7 +98,7 @@
             Plus: (p) => <IconBase {...p}><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></IconBase>,
             Minus: (p) => <IconBase {...p}><line x1="5" y1="12" x2="19" y2="12"/></IconBase>,
             X: (p) => <IconBase {...p}><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></IconBase>,
-            Sparkles: (p) => <IconBase {...p}><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/><path d="M5 3v4"/><path d="M9 5H5"/><path d="M19 21v-4"/><path d="M15 19h4"/></IconBase>,
+            Sparkles: (p) => <IconBase {...p}><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L12 3Z"/><path d="M5 3v4"/><path d="M9 5H5"/><path d="M19 21v-4"/><path d="M15 19h4"/></IconBase>,
             Utensils: (p) => <IconBase {...p}><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"/><path d="M7 2v20"/><path d="M21 15V2v0a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3Zm0 0v7"/></IconBase>,
             Shirt: (p) => <IconBase {...p}><path d="M20.38 3.46 16 2a4 4 0 0 1-8 0L3.62 3.46a2 2 0 0 0-1.34 2.23l.58 3.47a1 1 0 0 0 .99.84H6v10c0 1.1.9 2 2 2h8a2 2 0 0 0 2-2V10h2.15a1 1 0 0 0 .99-.84l.58-3.47a2 2 0 0 0-1.34-2.23z"/></IconBase>,
             Gamepad2: (p) => <IconBase {...p}><line x1="6" y1="12" x2="10" y2="12"/><line x1="8" y1="10" x2="8" y2="14"/><line x1="15" y1="13" x2="15.01" y2="13"/><line x1="18" y1="11" x2="18.01" y2="11"/><rect x="2" y="6" width="20" height="12" rx="2"/></IconBase>,
@@ -107,8 +138,7 @@
             ArrowDown: (p) => <IconBase {...p}><line x1="12" y1="5" x2="12" y2="19"/><polyline points="19 12 12 19 5 12"/></IconBase>,
             Save: (p) => <IconBase {...p}><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></IconBase>,
             Coins: (p) => <IconBase {...p}><circle cx="8" cy="8" r="6"/><path d="M18.09 10.37A6 6 0 1 1 10.34 18"/><path d="M7 6h1v4"/><path d="m7.1 13.8 3-3.8"/></IconBase>,
-            UserPlus: (p) => <IconBase {...p}><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/></IconBase>,
-            Google: (p) => <IconBase {...p}><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8c2.08 0 3.97.77 5.46 2.05l-2.74 2.74C13.68 5.86 12.88 5.5 12 5.5c-3.59 0-6.5 2.91-6.5 6.5s2.91 6.5 6.5 6.5c3.27 0 6-2.43 6.43-5.5h-6.43v-3.5h9.91c.09.58.14 1.18.14 1.8 0 4.25-2.85 7.7-7.15 7.7z" fill="currentColor"/></IconBase>
+            UserPlus: (p) => <IconBase {...p}><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/></IconBase>
         };
 
         const ICON_MAP = {
@@ -217,6 +247,7 @@
                     })
                     .catch((error) => {
                         console.error("Login failed:", error);
+                        // Show visible error
                         alert("שגיאה בהתחברות: " + error.message);
                     });
             };
@@ -234,12 +265,6 @@
                             onClick={handleGoogleLogin}
                             className="w-full py-4 rounded-xl bg-white border-2 border-slate-200 hover:bg-slate-50 hover:border-slate-300 transition-all flex items-center justify-center gap-3 shadow-sm group"
                         >
-                            <svg className="w-6 h-6" viewBox="0 0 24 24">
-                                <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
-                                <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
-                                <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/>
-                                <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
-                            </svg>
                             <span className="font-bold text-slate-700 group-hover:text-slate-900">התחבר עם Google</span>
                         </button>
                     </div>
