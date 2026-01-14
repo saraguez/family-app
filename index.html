@@ -8,12 +8,18 @@
     <!-- ERROR HANDLER -->
     <script>
         window.onerror = function(msg, url, lineNo, columnNo, error) {
+            // Ignore benign resize observer errors
+            if (msg.includes("ResizeObserver loop")) return true;
+
             const container = document.getElementById('root') || document.body;
             container.innerHTML = `
                 <div style="background:#fee2e2; color:#991b1b; padding:20px; margin:20px; border-radius:10px; border: 2px solid #ef4444; direction:ltr; text-align:left;">
                     <h2 style="font-size:24px; font-weight:bold; margin-bottom:10px;">⚠️ App Crashed</h2>
                     <p style="font-weight:bold;">Error: ${msg}</p>
                     <p>Line: ${lineNo}</p>
+                    <hr style="border-color:#fca5a5; margin:10px 0;"/>
+                    <p><strong>Did you update your Firebase Rules?</strong></p>
+                    <p>Go to Firebase Console -> Firestore Database -> Rules and allow read/write for authenticated users.</p>
                 </div>
             `;
             return false;
@@ -49,6 +55,7 @@
         const { useState, useEffect, useRef, useMemo } = React;
 
         // --- FIREBASE CONFIGURATION ---
+        // 🔴🔴🔴 IMPORTANT: Ensure your Rules in Firebase Console allow writes! 🔴🔴🔴
         const firebaseConfigRaw = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {
             apiKey: "AIzaSyCET42vMcj1uC0nMsqsWy2xd-yv1WC7e68",
             authDomain: "family-tasks-ee68f.firebaseapp.com",
@@ -74,9 +81,18 @@
 
         // --- HELPER FOR DB PATH ---
         const getUserDoc = (uid) => {
-            // Updated path structure to comply with strict security rules
-            // artifacts/{appId}/users/{userId}/data/{docId}
+            // Path: artifacts/{appId}/users/{userId}/data/family_app_v1
+            // This isolates every user's data
             return db.collection('artifacts').doc(appId).collection('users').doc(uid).collection('data').doc('family_app_v1');
+        };
+
+        const handleFirestoreError = (error) => {
+            console.error("Firestore Operation Error:", error);
+            if (error.code === 'permission-denied') {
+                alert("שגיאת הרשאה! \n\nנראה שחוקי האבטחה ב-Firebase חוסמים את השמירה.\nאנא היכנס ל-Firebase Console -> Firestore Database -> Rules\nושנה את החוקים ל:\nallow read, write: if request.auth != null;");
+            } else {
+                alert("אירעה שגיאה: " + error.message);
+            }
         };
 
         // --- ICONS & HELPERS ---
@@ -881,7 +897,7 @@
                 const newEntry = { text, diff: pointsDiff, timestamp: Date.now() };
                 const updatedHistory = [newEntry, ...history].slice(0, 50);
                 const docRef = getUserDoc(user.uid);
-                await docRef.update({ history: updatedHistory });
+                await docRef.update({ history: updatedHistory }).catch(handleFirestoreError);
             };
 
             const handleDeleteHistoryEntry = (index) => {
@@ -894,7 +910,7 @@
                     await docRef.update({ 
                         history: newHistory,
                         points: firebase.firestore.FieldValue.increment(-item.diff)
-                    });
+                    }).catch(handleFirestoreError);
                 });
             };
 
@@ -917,14 +933,14 @@
                     updates.points = firebase.firestore.FieldValue.increment(-1);
                     updates[`completedTasks.${taskKey}`] = false;
                     updates[`childScores.${childId}`] = firebase.firestore.FieldValue.increment(-1);
-                    await docRef.update(updates);
+                    await docRef.update(updates).catch(handleFirestoreError);
                     addToHistoryLog(`ביטול: ${taskText || 'משימה'} (${childName})`, -1);
                 } else {
                     playSuccessSound(); triggerConfetti();
                     updates.points = firebase.firestore.FieldValue.increment(1);
                     updates[`completedTasks.${taskKey}`] = true;
                     updates[`childScores.${childId}`] = firebase.firestore.FieldValue.increment(1);
-                    await docRef.update(updates);
+                    await docRef.update(updates).catch(handleFirestoreError);
                     addToHistoryLog(`משימה: ${taskText || 'משימה'} (${childName})`, 1);
                 }
             };
@@ -939,7 +955,7 @@
                     const newTask = { id: `custom_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`, text: newTaskText, type: taskType, date: getTodayKey(), createdAt: Date.now() };
                     updates[`childTasks.${cid}`] = [...currentTasks, newTask];
                 });
-                await docRef.update(updates);
+                await docRef.update(updates).catch(handleFirestoreError);
             };
 
             const handleEditTask = async (childId, taskId, newText, newType) => {
@@ -955,7 +971,7 @@
                             date: newType === 'one-time' ? getTodayKey() : t.date 
                         } : t
                     );
-                    await docRef.update({ [`childTasks.${childId}`]: updatedTasks });
+                    await docRef.update({ [`childTasks.${childId}`]: updatedTasks }).catch(handleFirestoreError);
                 });
             };
 
@@ -970,7 +986,7 @@
                 } else if (direction === 'down' && index < currentTasks.length - 1) {
                     [currentTasks[index], currentTasks[index + 1]] = [currentTasks[index + 1], currentTasks[index]];
                 }
-                await docRef.update({ [`childTasks.${childId}`]: currentTasks });
+                await docRef.update({ [`childTasks.${childId}`]: currentTasks }).catch(handleFirestoreError);
             };
 
             const handleDeleteTask = async (childId, taskId) => {
@@ -979,7 +995,7 @@
                     const docRef = getUserDoc(user.uid);
                     const currentTasks = tasksData[childId] || (childrenList.find(c => c.id === childId)?.initialTasks || []);
                     const updatedChildTasks = { ...tasksData, [childId]: currentTasks.filter(t => t.id !== taskId) };
-                    await docRef.update({ childTasks: updatedChildTasks });
+                    await docRef.update({ childTasks: updatedChildTasks }).catch(handleFirestoreError);
                 });
             };
 
@@ -993,7 +1009,7 @@
                     const childName = getChildVisuals(childId).name;
                     logMessage = `בונוס ל${childName}`;
                 }
-                await docRef.update(updates);
+                await docRef.update(updates).catch(handleFirestoreError);
                 addToHistoryLog(logMessage, amount);
                 setShowBonusModal(false);
             };
@@ -1002,7 +1018,6 @@
                 if (!user) return;
                 const docRef = getUserDoc(user.uid);
                 try {
-                    // Using set with merge to be safer if field path doesn't fully exist
                     await docRef.set({ 
                         childSettings: {
                             [childId]: newSettings 
@@ -1010,8 +1025,7 @@
                     }, { merge: true });
                     setEditingChildId(null);
                 } catch (error) {
-                    console.error("Error saving child settings:", error);
-                    alert("אירעה שגיאה בשמירת השינויים: " + error.message);
+                    handleFirestoreError(error);
                 }
             };
 
@@ -1019,12 +1033,10 @@
                 if (!user) return;
                 const docRef = getUserDoc(user.uid);
                 try {
-                    // Using set with merge to be safer
                     await docRef.set({ familySettings: newSettings }, { merge: true });
                     setShowFamilyEditModal(false);
                 } catch (error) {
-                    console.error("Error saving family settings:", error);
-                    alert("אירעה שגיאה בשמירת השינויים: " + error.message);
+                    handleFirestoreError(error);
                 }
             };
 
@@ -1032,7 +1044,7 @@
                 verifyParentAuth(async () => {
                     if (!user) return;
                     const docRef = getUserDoc(user.uid);
-                    await docRef.update({ points: 0, childScores: {} });
+                    await docRef.update({ points: 0, childScores: {} }).catch(handleFirestoreError);
                     addToHistoryLog('איפוס נקודות', -points);
                     setShowWinModal(false);
                 });
@@ -1043,7 +1055,7 @@
                 const pointsToDeduct = amount * pointsPerShekel;
                 const docRef = getUserDoc(user.uid);
                 const childName = getChildVisuals(cashOutChildId).name;
-                await docRef.update({ [`childScores.${cashOutChildId}`]: firebase.firestore.FieldValue.increment(-pointsToDeduct) });
+                await docRef.update({ [`childScores.${cashOutChildId}`]: firebase.firestore.FieldValue.increment(-pointsToDeduct) }).catch(handleFirestoreError);
                 addToHistoryLog(`פדיון כסף עבור ${childName}: ₪${amount}`, 0); 
                 setShowCashOutModal(false);
                 setCashOutChildId(null);
@@ -1061,7 +1073,7 @@
                     initialTasks: getStandardTasks(newChildId)
                 };
                 const updatedList = [...childrenList, newChild];
-                await docRef.update({ childrenList: updatedList });
+                await docRef.update({ childrenList: updatedList }).catch(handleFirestoreError);
                 setShowAddChildModal(false);
             };
 
@@ -1081,7 +1093,7 @@
                         [`childScores.${childId}`]: firebase.firestore.FieldValue.delete()
                     };
 
-                    await docRef.update(updates);
+                    await docRef.update(updates).catch(handleFirestoreError);
                     setEditingChildId(null);
                 });
             };
