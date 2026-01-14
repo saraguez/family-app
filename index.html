@@ -36,7 +36,7 @@
         const { useState, useEffect, useRef } = React;
 
         // --- FIREBASE CONFIGURATION ---
-        // 🔴 PASTE YOUR FIREBASE KEYS HERE 🔴
+        // 🔴 וודא שהמפתחות שלך מעודכנים כאן 🔴
         const firebaseConfig = {
             apiKey: "AIzaSyCET42vMcj1uC0nMsqsWy2xd-yv1WC7e68",
             authDomain: "family-tasks-ee68f.firebaseapp.com",
@@ -56,7 +56,7 @@
         const auth = firebase.auth();
         const db = firebase.firestore();
 
-        // 🟢🟢🟢 YOUR UNIQUE ID 🟢🟢🟢
+        // 🟢🟢🟢 וודא שהשם כאן זהה למה שהגדרת קודם לכן 🟢🟢🟢
         const appId = "CHANGE-THIS-TO-YOUR-UNIQUE-FAMILY-ID"; 
 
         // --- ICONS ---
@@ -686,7 +686,7 @@
                 const settings = childSettings[childId] || {};
                 const themeId = settings.themeId || childDefault.defaultThemeId;
                 const theme = THEMES.find(t => t.id === themeId) || THEMES[0];
-                const useImage = settings.useImage; const image = settings.image; const useEmoji = settings.useEmoji; const emoji = settings.emoji || '😊'; const iconKey = settings.iconKey || childDefault.defaultIconKey;
+                const useImage = settings.useImage; const image = settings.image; const useEmoji = settings.useEmoji; const emoji = settings.emoji || '😊'; const iconKey = settings.iconKey || child.defaultIconKey;
                 const IconComponent = ICON_MAP[iconKey] || Icons.Smile;
                 const name = settings.name || childDefault.name;
                 return { theme, IconComponent, useEmoji, emoji, useImage, image, name };
@@ -916,6 +916,10 @@
                             const currentScore = childScores[child.id] || 0;
                             const money = Math.floor(currentScore / 5);
 
+                            // Calculate progress
+                            const completedCount = currentTasks.filter(t => completedTasks[`${getTodayKey()}_${child.id}_${t.id}`]).length;
+                            const totalCount = currentTasks.length;
+
                             return (
                                 <div key={child.id} className={`group relative bg-white rounded-3xl p-6 border-4 ${theme.classes.split(' ')[2]} shadow-md hover:shadow-xl hover:-translate-y-2 transition-all duration-300 flex flex-col items-center justify-center gap-4 h-64 select-none`} {...createLongPressHandlers(() => setEditingChildId(child.id), () => setSelectedChild(child))}>
                                     <button onClick={(e) => { e.stopPropagation(); verifyParentAuth(() => setEditingChildId(child.id)); }} className="absolute top-2 right-2 p-2 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-400 hover:text-slate-600 transition-colors opacity-0 group-hover:opacity-100 z-10" title="עריכת עיצוב"><Icons.Settings className="w-4 h-4" /></button>
@@ -929,7 +933,11 @@
                                     <div className="flex flex-col items-center justify-center w-full h-full cursor-pointer">
                                         <div className={`w-24 h-24 rounded-full ${theme.iconBg} flex items-center justify-center shadow-inner group-hover:scale-110 transition-transform overflow-hidden relative`}>{useImage && image ? <img src={image} alt={name} className="w-full h-full object-cover" /> : useEmoji ? <span className="text-5xl leading-none select-none">{emoji}</span> : <IconComponent className={`w-10 h-10 ${theme.iconText}`} />}</div>
                                         <h2 className="text-2xl font-bold text-center mt-4" title="לחיצה ארוכה לעריכת שם">{name}</h2>
-                                        <div className="flex gap-1 mt-2">{currentTasks.map((task) => { const isDone = completedTasks[`${getTodayKey()}_${child.id}_${task.id}`]; return (<div key={task.id} className={`w-3 h-3 rounded-full ${isDone ? 'bg-green-500' : 'bg-slate-200'}`} />); })}</div>
+                                        
+                                        {/* Task Progress (Text Ratio) */}
+                                        <div className="mt-2 px-3 py-1 bg-slate-100 rounded-full text-sm font-bold text-slate-600">
+                                            {completedCount} / {totalCount}
+                                        </div>
                                     </div>
                                     <div className="absolute top-4 left-4 bg-slate-100 rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none"><Icons.Plus className="w-5 h-5 text-slate-400" /></div>
                                 </div>
