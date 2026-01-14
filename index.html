@@ -1002,11 +1002,16 @@
                 if (!user) return;
                 const docRef = getUserDoc(user.uid);
                 try {
-                    await docRef.update({ [`childSettings.${childId}`]: newSettings });
+                    // Using set with merge to be safer if field path doesn't fully exist
+                    await docRef.set({ 
+                        childSettings: {
+                            [childId]: newSettings 
+                        }
+                    }, { merge: true });
                     setEditingChildId(null);
                 } catch (error) {
                     console.error("Error saving child settings:", error);
-                    alert("אירעה שגיאה בשמירת השינויים. אנא נסה שנית.");
+                    alert("אירעה שגיאה בשמירת השינויים: " + error.message);
                 }
             };
 
@@ -1014,11 +1019,12 @@
                 if (!user) return;
                 const docRef = getUserDoc(user.uid);
                 try {
-                    await docRef.update({ familySettings: newSettings });
+                    // Using set with merge to be safer
+                    await docRef.set({ familySettings: newSettings }, { merge: true });
                     setShowFamilyEditModal(false);
                 } catch (error) {
                     console.error("Error saving family settings:", error);
-                    alert("אירעה שגיאה בשמירת השינויים. אנא נסה שנית.");
+                    alert("אירעה שגיאה בשמירת השינויים: " + error.message);
                 }
             };
 
