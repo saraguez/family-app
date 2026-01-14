@@ -994,15 +994,30 @@
             const handleSaveSettings = async (childId, newSettings) => {
                 if (!user) return;
                 const docRef = db.collection('artifacts').doc(appId).collection('users').doc(user.uid);
-                await docRef.update({ childSettings: { ...childSettings, [childId]: { ...childSettings[childId], ...newSettings } } });
-                setEditingChildId(null);
+                
+                try {
+                    // Update only the specific child settings using dot notation
+                    await docRef.update({ 
+                        [`childSettings.${childId}`]: newSettings 
+                    });
+                    setEditingChildId(null);
+                } catch (error) {
+                    console.error("Error saving child settings:", error);
+                    alert("אירעה שגיאה בשמירת השינויים. אנא נסה שנית.");
+                }
             };
 
             const handleSaveFamilySettings = async (newSettings) => {
                 if (!user) return;
                 const docRef = db.collection('artifacts').doc(appId).collection('users').doc(user.uid);
-                await docRef.update({ familySettings: newSettings });
-                setShowFamilyEditModal(false);
+                
+                try {
+                    await docRef.update({ familySettings: newSettings });
+                    setShowFamilyEditModal(false);
+                } catch (error) {
+                    console.error("Error saving family settings:", error);
+                    alert("אירעה שגיאה בשמירת השינויים. אנא נסה שנית.");
+                }
             };
 
             const handleResetPoints = async () => {
