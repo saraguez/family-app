@@ -72,6 +72,13 @@
         
         const appId = typeof __app_id !== 'undefined' ? __app_id : 'family-tasks-default';
 
+        // --- HELPER FOR DB PATH ---
+        const getUserDoc = (uid) => {
+            // Updated path structure to comply with strict security rules
+            // artifacts/{appId}/users/{userId}/data/{docId}
+            return db.collection('artifacts').doc(appId).collection('users').doc(uid).collection('data').doc('family_app_v1');
+        };
+
         // --- ICONS & HELPERS ---
         const IconBase = ({ children, className, ...props }) => (
             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className} {...props}>{children}</svg>
@@ -790,7 +797,7 @@
                     
                     if (currentUser) {
                         // Use a safe path structure: artifacts/{appId}/users/{uid}
-                        const docRef = db.collection('artifacts').doc(appId).collection('users').doc(currentUser.uid);
+                        const docRef = getUserDoc(currentUser.uid);
                         
                         // Real-time listener
                         const unsubscribeDoc = docRef.onSnapshot((docSnap) => {
@@ -805,7 +812,7 @@
                                 setChildScores(data.childScores || {});
                                 if (data.childrenList) setChildrenList(data.childrenList);
                             } else {
-                                // Initialize new user data
+                                // Initialize new user data with merge:true just in case
                                 docRef.set({ 
                                     points: 0, 
                                     completedTasks: {}, 
@@ -816,7 +823,7 @@
                                     childScores: {}, 
                                     childrenList: CHILDREN_DEFAULTS,
                                     ownerEmail: currentUser.email || 'anonymous'
-                                });
+                                }, { merge: true });
                             }
                         }, (error) => {
                             console.error("Firestore Listen Error:", error);
@@ -873,7 +880,7 @@
                 if (!user) return;
                 const newEntry = { text, diff: pointsDiff, timestamp: Date.now() };
                 const updatedHistory = [newEntry, ...history].slice(0, 50);
-                const docRef = db.collection('artifacts').doc(appId).collection('users').doc(user.uid);
+                const docRef = getUserDoc(user.uid);
                 await docRef.update({ history: updatedHistory });
             };
 
@@ -883,7 +890,7 @@
                     const item = history[index];
                     const newHistory = [...history];
                     newHistory.splice(index, 1);
-                    const docRef = db.collection('artifacts').doc(appId).collection('users').doc(user.uid);
+                    const docRef = getUserDoc(user.uid);
                     await docRef.update({ 
                         history: newHistory,
                         points: firebase.firestore.FieldValue.increment(-item.diff)
@@ -901,7 +908,7 @@
                 if (!user) return;
                 const taskKey = `${getTodayKey()}_${childId}_${taskId}`;
                 const isAlreadyDone = completedTasks[taskKey];
-                const docRef = db.collection('artifacts').doc(appId).collection('users').doc(user.uid);
+                const docRef = getUserDoc(user.uid);
                 const childName = getChildVisuals(childId).name;
                 
                 const updates = {};
@@ -924,7 +931,7 @@
 
             const handleAddTask = async (childId, newTaskText, taskType, addToAll) => {
                 if (!user) return;
-                const docRef = db.collection('artifacts').doc(appId).collection('users').doc(user.uid);
+                const docRef = getUserDoc(user.uid);
                 let updates = {};
                 const childrenToUpdate = addToAll ? childrenList.map(c => c.id) : [childId];
                 childrenToUpdate.forEach(cid => {
@@ -938,7 +945,7 @@
             const handleEditTask = async (childId, taskId, newText, newType) => {
                 verifyParentAuth(async () => {
                     if (!user) return;
-                    const docRef = db.collection('artifacts').doc(appId).collection('users').doc(user.uid);
+                    const docRef = getUserDoc(user.uid);
                     const currentTasks = tasksData[childId] || (childrenList.find(c => c.id === childId)?.initialTasks || []);
                     const updatedTasks = currentTasks.map(t => 
                         t.id === taskId ? { 
@@ -954,7 +961,7 @@
 
             const handleMoveTask = async (childId, taskId, direction) => {
                 if (!user) return;
-                const docRef = db.collection('artifacts').doc(appId).collection('users').doc(user.uid);
+                const docRef = getUserDoc(user.uid);
                 const currentTasks = [...(tasksData[childId] || (childrenList.find(c => c.id === childId)?.initialTasks || []))];
                 const index = currentTasks.findIndex(t => t.id === taskId);
                 if (index < 0) return;
@@ -969,7 +976,7 @@
             const handleDeleteTask = async (childId, taskId) => {
                 verifyParentAuth(async () => {
                     if (!user) return;
-                    const docRef = db.collection('artifacts').doc(appId).collection('users').doc(user.uid);
+                    const docRef = getUserDoc(user.uid);
                     const currentTasks = tasksData[childId] || (childrenList.find(c => c.id === childId)?.initialTasks || []);
                     const updatedChildTasks = { ...tasksData, [childId]: currentTasks.filter(t => t.id !== taskId) };
                     await docRef.update({ childTasks: updatedChildTasks });
@@ -978,7 +985,7 @@
 
             const handleBonusPoint = async (amount = 1, childId = null) => {
                 if (!user) return; playSuccessSound(); triggerConfetti();
-                const docRef = db.collection('artifacts').doc(appId).collection('users').doc(user.uid);
+                const docRef = getUserDoc(user.uid);
                 const updates = { points: firebase.firestore.FieldValue.increment(amount) };
                 let logMessage = `בונוס משפחתי`;
                 if (childId) {
@@ -993,13 +1000,9 @@
 
             const handleSaveSettings = async (childId, newSettings) => {
                 if (!user) return;
-                const docRef = db.collection('artifacts').doc(appId).collection('users').doc(user.uid);
-                
+                const docRef = getUserDoc(user.uid);
                 try {
-                    // Update only the specific child settings using dot notation
-                    await docRef.update({ 
-                        [`childSettings.${childId}`]: newSettings 
-                    });
+                    await docRef.update({ [`childSettings.${childId}`]: newSettings });
                     setEditingChildId(null);
                 } catch (error) {
                     console.error("Error saving child settings:", error);
@@ -1009,8 +1012,7 @@
 
             const handleSaveFamilySettings = async (newSettings) => {
                 if (!user) return;
-                const docRef = db.collection('artifacts').doc(appId).collection('users').doc(user.uid);
-                
+                const docRef = getUserDoc(user.uid);
                 try {
                     await docRef.update({ familySettings: newSettings });
                     setShowFamilyEditModal(false);
@@ -1023,7 +1025,7 @@
             const handleResetPoints = async () => {
                 verifyParentAuth(async () => {
                     if (!user) return;
-                    const docRef = db.collection('artifacts').doc(appId).collection('users').doc(user.uid);
+                    const docRef = getUserDoc(user.uid);
                     await docRef.update({ points: 0, childScores: {} });
                     addToHistoryLog('איפוס נקודות', -points);
                     setShowWinModal(false);
@@ -1033,7 +1035,7 @@
             const handleCashOut = async (amount) => {
                 if (!user || !cashOutChildId) return;
                 const pointsToDeduct = amount * pointsPerShekel;
-                const docRef = db.collection('artifacts').doc(appId).collection('users').doc(user.uid);
+                const docRef = getUserDoc(user.uid);
                 const childName = getChildVisuals(cashOutChildId).name;
                 await docRef.update({ [`childScores.${cashOutChildId}`]: firebase.firestore.FieldValue.increment(-pointsToDeduct) });
                 addToHistoryLog(`פדיון כסף עבור ${childName}: ₪${amount}`, 0); 
@@ -1043,7 +1045,7 @@
 
             const handleAddChild = async (newChildData) => {
                 if (!user) return;
-                const docRef = db.collection('artifacts').doc(appId).collection('users').doc(user.uid);
+                const docRef = getUserDoc(user.uid);
                 const newChildId = `child_${Date.now()}`;
                 const newChild = {
                     id: newChildId,
@@ -1060,7 +1062,7 @@
             const handleDeleteChild = async (childId) => {
                 verifyParentAuth(async () => {
                     if (!user) return;
-                    const docRef = db.collection('artifacts').doc(appId).collection('users').doc(user.uid);
+                    const docRef = getUserDoc(user.uid);
                     
                     // Filter out the deleted child
                     const updatedList = childrenList.filter(c => c.id !== childId);
