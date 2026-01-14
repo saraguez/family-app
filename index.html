@@ -544,6 +544,18 @@
                                         <input type="checkbox" checked={addToAll} onChange={(e) => setAddToAll(e.target.checked)} className="w-5 h-5 text-blue-600 rounded focus:ring-blue-500 border-gray-300" />
                                         <span className="text-sm font-bold text-slate-600">הוסף לכל הילדים</span>
                                     </label>
+                                    <div className="flex gap-2">
+                                        <button onClick={() => setIsAdding(false)} className="flex-1 py-2 text-slate-500 font-bold hover:bg-slate-100 rounded-lg">ביטול</button>
+                                        <button onClick={handleAddSubmit} className="flex-1 py-2 bg-blue-600 text-white font-bold rounded-lg hover:bg-blue-700 shadow-md">שמור</button>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
         const EditChildModal = ({ childId, initialSettings, currentSettings, childName, onClose, onSave, onDelete }) => {
             const getInitialTab = () => { if (currentSettings.useImage) return 'image'; if (currentSettings.useEmoji) return 'emoji'; return 'icon'; };
             const [activeTab, setActiveTab] = useState(getInitialTab());
