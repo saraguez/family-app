@@ -2,45 +2,41 @@
 <html lang="he" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Family Task App</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>המבצע המשפחתי</title>
     
-    <style>
-        body { background-color: #f8fafc; font-family: sans-serif; user-select: none; -webkit-user-select: none; }
-        #root:empty::before { content: 'טוען את האפליקציה...'; display: block; text-align: center; margin-top: 50px; font-size: 24px; color: #64748b; }
-        #crash-screen { display: none; position: fixed; inset: 0; background: #fee2e2; color: #991b1b; padding: 20px; z-index: 9999; overflow: auto; direction: ltr; text-align: left; }
-        .tap-highlight-transparent { -webkit-tap-highlight-color: transparent; }
-    </style>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🏆</text></svg>">
+    <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🏆</text></svg>">
 
-    <script type="importmap">
-    {
-      "imports": {
-        "react": "https://esm.sh/react@18.2.0",
-        "react-dom/client": "https://esm.sh/react-dom@18.2.0/client",
-        "firebase/app": "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js",
-        "firebase/auth": "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js",
-        "firebase/firestore": "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js",
-        "lucide-react": "https://esm.sh/lucide-react@0.292.0"
-      }
-    }
-    </script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+
+    <style>
+        @keyframes shimmer { 0% { transform: translateX(-150%); } 50% { transform: translateX(150%); } 100% { transform: translateX(150%); } }
+        @keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes slide-up { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes scale-up { from { opacity: 0; transform: scale(0.9); } to { opacity: 1; transform: scale(1); } }
+        .animate-fade-in { animation: fade-in 0.2s ease-out; }
+        .animate-slide-up { animation: slide-up 0.3s cubic-bezier(0.16, 1, 0.3, 1); }
+        .animate-scale-up { animation: scale-up 0.2s cubic-bezier(0.16, 1, 0.3, 1); }
+        ::-webkit-scrollbar { width: 0px; background: transparent; }
+        body { -webkit-tap-highlight-color: transparent; }
+    </style>
 </head>
-<body>
-    <div id="crash-screen"></div>
+<body class="bg-slate-50 text-slate-800 font-sans select-none overflow-x-hidden">
     <div id="root"></div>
-    <script>window.onerror=function(m,u,l){document.getElementById('crash-screen').style.display='block';document.getElementById('crash-screen').innerHTML+=`<h3>❌ Error:</h3><pre>${m}\nLine: ${l}</pre>`;}</script>
 
-    <script type="text/babel" data-type="module">
-        import React, { useState, useEffect, useRef } from 'react';
-        import { createRoot } from 'react-dom/client';
-        import { initializeApp } from 'firebase/app';
-        import { getAuth, signInAnonymously, onAuthStateChanged } from 'firebase/auth';
-        import { getFirestore, doc, onSnapshot, setDoc, updateDoc, increment } from 'firebase/firestore';
-        import * as LucideIcons from 'lucide-react';
+    <script type="text/babel">
+        const { useState, useEffect, useRef } = React;
 
-        // --- KEYS ---
+        // --- FIREBASE CONFIGURATION ---
+        // 🔴 וודא שהמפתחות שלך מעודכנים כאן 🔴
         const firebaseConfig = {
             apiKey: "AIzaSyCET42vMcj1uC0nMsqsWy2xd-yv1WC7e68",
             authDomain: "family-tasks-ee68f.firebaseapp.com",
@@ -50,66 +46,93 @@
             appId: "1:579816138584:web:1b2a3cbf4c5fd00a45e72d"
         };
 
-        const app = initializeApp(firebaseConfig);
-        const auth = getAuth(app);
-        const db = getFirestore(app);
-        const appId = 'family-app-main';
-        const PARENT_PIN = "0613";
-
-        // --- SOUND ENGINE (Synthesizer) ---
-        const playSound = (type) => {
-            const AudioContext = window.AudioContext || window.webkitAudioContext;
-            if (!AudioContext) return;
-            const ctx = new AudioContext();
-            
-            if (type === 'ding') {
-                const osc = ctx.createOscillator();
-                const gain = ctx.createGain();
-                osc.connect(gain); gain.connect(ctx.destination);
-                osc.type = 'sine';
-                osc.frequency.setValueAtTime(523.25, ctx.currentTime); // C5
-                osc.frequency.exponentialRampToValueAtTime(1046.5, ctx.currentTime + 0.1); // C6
-                gain.gain.setValueAtTime(0.3, ctx.currentTime);
-                gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.5);
-                osc.start(); osc.stop(ctx.currentTime + 0.5);
-            } else if (type === 'win') {
-                const now = ctx.currentTime;
-                [523.25, 659.25, 783.99, 1046.50].forEach((freq, i) => {
-                    const osc = ctx.createOscillator();
-                    const gain = ctx.createGain();
-                    osc.connect(gain); gain.connect(ctx.destination);
-                    osc.type = 'triangle';
-                    osc.frequency.value = freq;
-                    gain.gain.setValueAtTime(0.2, now + i*0.15);
-                    gain.gain.exponentialRampToValueAtTime(0.01, now + i*0.15 + 0.4);
-                    osc.start(now + i*0.15); osc.stop(now + i*0.15 + 0.4);
-                });
+        if (!firebase.apps.length) {
+            try {
+                firebase.initializeApp(firebaseConfig);
+            } catch(e) {
+                console.error("Firebase init error. Did you paste the keys?", e);
             }
+        }
+        const auth = firebase.auth();
+        const db = firebase.firestore();
+
+        // 🟢🟢🟢 שינוי חשוב: שנה את השם הזה למשהו ייחודי (למשל: cohen-family-2024) 🟢🟢🟢
+        const appId = "CHANGE-THIS-TO-YOUR-UNIQUE-FAMILY-ID"; 
+
+        // --- ICONS ---
+        const IconBase = ({ children, className, ...props }) => (
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className} {...props}>{children}</svg>
+        );
+
+        const Icons = {
+            Trophy: (p) => <IconBase {...p}><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5 2.5 2.5 0 0 1 0 5z"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5 2.5 2.5 0 0 0 0 5z"/><path d="M4 22h16"/><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"/><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"/><path d="M18 2H6v7a6 6 0 0 0 12 0V2z"/></IconBase>,
+            Star: (p) => <IconBase {...p}><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></IconBase>,
+            Check: (p) => <IconBase {...p}><polyline points="20 6 9 17 4 12"/></IconBase>,
+            Plus: (p) => <IconBase {...p}><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></IconBase>,
+            Minus: (p) => <IconBase {...p}><line x1="5" y1="12" x2="19" y2="12"/></IconBase>,
+            X: (p) => <IconBase {...p}><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></IconBase>,
+            Sparkles: (p) => <IconBase {...p}><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/><path d="M5 3v4"/><path d="M9 5H5"/><path d="M19 21v-4"/><path d="M15 19h4"/></IconBase>,
+            Utensils: (p) => <IconBase {...p}><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"/><path d="M7 2v20"/><path d="M21 15V2v0a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3Zm0 0v7"/></IconBase>,
+            Shirt: (p) => <IconBase {...p}><path d="M20.38 3.46 16 2a4 4 0 0 1-8 0L3.62 3.46a2 2 0 0 0-1.34 2.23l.58 3.47a1 1 0 0 0 .99.84H6v10c0 1.1.9 2 2 2h8a2 2 0 0 0 2-2V10h2.15a1 1 0 0 0 .99-.84l.58-3.47a2 2 0 0 0-1.34-2.23z"/></IconBase>,
+            Gamepad2: (p) => <IconBase {...p}><line x1="6" y1="12" x2="10" y2="12"/><line x1="8" y1="10" x2="8" y2="14"/><line x1="15" y1="13" x2="15.01" y2="13"/><line x1="18" y1="11" x2="18.01" y2="11"/><rect x="2" y="6" width="20" height="12" rx="2"/></IconBase>,
+            Trash2: (p) => <IconBase {...p}><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></IconBase>,
+            Home: (p) => <IconBase {...p}><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></IconBase>,
+            Settings: (p) => <IconBase {...p}><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.09a2 2 0 0 1-1-1.74v-.47a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></IconBase>,
+            Smile: (p) => <IconBase {...p}><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></IconBase>,
+            Heart: (p) => <IconBase {...p}><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></IconBase>,
+            Sun: (p) => <IconBase {...p}><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></IconBase>,
+            Moon: (p) => <IconBase {...p}><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></IconBase>,
+            Music: (p) => <IconBase {...p}><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></IconBase>,
+            Book: (p) => <IconBase {...p}><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></IconBase>,
+            Bike: (p) => <IconBase {...p}><circle cx="5.5" cy="17.5" r="3.5"/><circle cx="18.5" cy="17.5" r="3.5"/><path d="M15 6h-5a1 1 0 0 0-1 1v4"/><path d="M12 17.5V14l-3-3 4-3 2 3h2"/></IconBase>,
+            Car: (p) => <IconBase {...p}><path d="M19 17h2c.6 0 1-.4 1-1v-3c0-.9-.7-1.7-1.5-1.9C18.7 10.6 16 10 16 10s-1.3-1.4-2.2-2.3c-.5-.4-1.1-.7-1.8-.7H5c-.6 0-1.1.4-1.4.9l-1.4 2.9A3.7 3.7 0 0 0 2 12v4c0 .6.4 1 1 1h2"/><circle cx="7" cy="17" r="2"/><path d="M9 17h6"/><circle cx="17" cy="17" r="2"/></IconBase>,
+            Cat: (p) => <IconBase {...p}><path d="M12 5c.67 0 1.35.09 2 .26 1.78-2 5.03-2.84 6.42-2.26 1.4.58-.42 7-.42 7 .57 1.07 1 2.24 1 3.44C21 17.9 16.97 21 12 21s-9-3.1-9-7.56c0-1.25.5-2.4 1-3.44 0 0-1.89-6.42-.5-7 1.39-.58 4.72.23 6.5 2.23A9.04 9.04 0 0 1 12 5Z"/><path d="M8 14v.5"/><path d="M16 14v.5"/><path d="M11.25 16.25h1.5"/></IconBase>,
+            Dog: (p) => <IconBase {...p}><path d="M10 5.172C10 3.782 8.423 2.679 6.5 3c-2.823.47-4.113 6.006-4 7 .08.703 1.725 1.722 3.656 1 1.261-.472 1.96-1.45 2.344-2.5"/><path d="M14.267 5.172c0-1.39 1.577-2.493 3.5-2.172 2.823.47 4.113 6.006 4 7-.08.703-1.725 1.722-3.656 1-1.261-.472-1.96-1.45-2.344-2.5"/><path d="M8 14v.5"/><path d="M16 14v.5"/><path d="M11.25 16.25h1.5"/><path d="M12 21c5.523 0 10-4.477 10-10S17.523 1 12 1 2 5.477 2 11s4.477 10 10 10Z"/></IconBase>,
+            Flower: (p) => <IconBase {...p}><path d="M12 7.5a4.5 4.5 0 1 1 4.5 4.5M12 7.5A4.5 4.5 0 1 0 7.5 12M12 7.5V9m-4.5 3a4.5 4.5 0 1 1 4.5 4.5M7.5 12H9m3 4.5a4.5 4.5 0 1 1 4.5-4.5M12 16.5V15m4.5-3h-1.5"/><path d="m8 22 4-6 4 6"/><path d="M16 8a2 2 0 1 0 4 0 2 2 0 1 0-4 0"/><path d="M4 8a2 2 0 1 0 4 0 2 2 0 1 0-4 0"/><path d="M8 16a2 2 0 1 0 4 0 2 2 0 1 0-4 0"/><path d="M16 16a2 2 0 1 0 4 0 2 2 0 1 0-4 0"/><path d="M12 12a2 2 0 1 0 4 0 2 2 0 1 0-4 0"/></IconBase>,
+            Palette: (p) => <IconBase {...p}><circle cx="13.5" cy="6.5" r=".5"/><circle cx="17.5" cy="10.5" r=".5"/><circle cx="8.5" cy="7.5" r=".5"/><circle cx="6.5" cy="12.5" r=".5"/><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 0 1 1.668-1.668h1.996c3.051 0 5.555-2.503 5.555-5.554C21.965 6.012 17.461 2 12 2z"/></IconBase>,
+            Camera: (p) => <IconBase {...p}><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="3"/></IconBase>,
+            Upload: (p) => <IconBase {...p}><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></IconBase>,
+            ImageIcon: (p) => <IconBase {...p}><rect width="18" height="18" x="3" y="3" rx="2" ry="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></IconBase>,
+            Type: (p) => <IconBase {...p}><polyline points="4 7 4 4 20 4 20 7"/><line x1="9" y1="20" x2="15" y2="20"/><line x1="12" y1="4" x2="12" y2="20"/></IconBase>,
+            Calendar: (p) => <IconBase {...p}><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></IconBase>,
+            Repeat: (p) => <IconBase {...p}><path d="m17 2 4 4-4 4"/><path d="M3 11v-1a4 4 0 0 1 4-4h14"/><path d="m7 22-4-4 4-4"/><path d="M21 13v1a4 4 0 0 1-4 4H3"/></IconBase>,
+            MoreVertical: (p) => <IconBase {...p}><circle cx="12" cy="12" r="1"/><circle cx="12" cy="5" r="1"/><circle cx="12" cy="19" r="1"/></IconBase>,
+            RotateCcw: (p) => <IconBase {...p}><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></IconBase>,
+            Target: (p) => <IconBase {...p}><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></IconBase>,
+            CalendarDays: (p) => <IconBase {...p}><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><path d="M8 14h.01"/><path d="M12 14h.01"/><path d="M16 14h.01"/><path d="M8 18h.01"/><path d="M12 18h.01"/><path d="M16 18h.01"/></IconBase>,
+            Sunrise: (p) => <IconBase {...p}><path d="M12 2v8"/><path d="m4.93 10.93 1.41 1.41"/><path d="M2 18h2"/><path d="M20 18h2"/><path d="m19.07 10.93-1.41 1.41"/><path d="M22 22H2"/><path d="m8 6 4-4 4 4"/><path d="M16 18a4 4 0 0 0-8 0"/></IconBase>,
+            Sunset: (p) => <IconBase {...p}><path d="M12 10V2"/><path d="m4.93 10.93 1.41 1.41"/><path d="M2 18h2"/><path d="M20 18h2"/><path d="m19.07 10.93-1.41 1.41"/><path d="M22 22H2"/><path d="m16 6-4 4-4-4"/><path d="M16 18a4 4 0 0 0-8 0"/></IconBase>,
+            Lock: (p) => <IconBase {...p}><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></IconBase>,
+            Unlock: (p) => <IconBase {...p}><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 9.9-1"/></IconBase>,
+            History: (p) => <IconBase {...p}><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M12 7v5l4 2"/></IconBase>,
+            Pencil: (p) => <IconBase {...p}><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></IconBase>,
+            CheckSquare: (p) => <IconBase {...p}><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></IconBase>,
+            ArrowUp: (p) => <IconBase {...p}><line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/></IconBase>,
+            ArrowDown: (p) => <IconBase {...p}><line x1="12" y1="5" x2="12" y2="19"/><polyline points="19 12 12 19 5 12"/></IconBase>,
+            Save: (p) => <IconBase {...p}><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></IconBase>
         };
 
-        // --- ICONS & HELPERS ---
-        const getIcon = (name) => {
-            const c = name.charAt(0).toUpperCase() + name.slice(1);
-            return LucideIcons[c] || LucideIcons['Smile'];
+        const ICON_MAP = {
+            'trophy': Icons.Trophy, 'utensils': Icons.Utensils, 'shirt': Icons.Shirt, 'gamepad': Icons.Gamepad2, 'home': Icons.Home, 'star': Icons.Star, 'heart': Icons.Heart, 'smile': Icons.Smile, 'sun': Icons.Sun, 'moon': Icons.Moon, 'music': Icons.Music, 'book': Icons.Book, 'bike': Icons.Bike, 'car': Icons.Car, 'cat': Icons.Cat, 'dog': Icons.Dog, 'flower': Icons.Flower, 'camera': Icons.Camera, 'sparkles': Icons.Sparkles
         };
 
         const THEMES = [
-            { id: 'pink', classes: 'bg-pink-100 text-pink-700 border-pink-300', iconBg: 'bg-pink-200', iconText: 'text-pink-600' },
-            { id: 'blue', classes: 'bg-blue-100 text-blue-700 border-blue-300', iconBg: 'bg-blue-200', iconText: 'text-blue-600' },
-            { id: 'green', classes: 'bg-green-100 text-green-700 border-green-300', iconBg: 'bg-green-200', iconText: 'text-green-600' },
-            { id: 'purple', classes: 'bg-purple-100 text-purple-700 border-purple-300', iconBg: 'bg-purple-200', iconText: 'text-purple-600' },
-            { id: 'yellow', classes: 'bg-yellow-100 text-yellow-700 border-yellow-300', iconBg: 'bg-yellow-200', iconText: 'text-yellow-600' },
-            { id: 'orange', classes: 'bg-orange-100 text-orange-700 border-orange-300', iconBg: 'bg-orange-200', iconText: 'text-orange-600' },
-            { id: 'teal', classes: 'bg-teal-100 text-teal-700 border-teal-300', iconBg: 'bg-teal-200', iconText: 'text-teal-600' },
-            { id: 'red', classes: 'bg-red-100 text-red-700 border-red-300', iconBg: 'bg-red-200', iconText: 'text-red-600' },
+            { id: 'pink', name: 'ורוד', classes: 'bg-pink-100 text-pink-700 border-pink-300', iconBg: 'bg-pink-200', iconText: 'text-pink-600' },
+            { id: 'blue', name: 'כחול', classes: 'bg-blue-100 text-blue-700 border-blue-300', iconBg: 'bg-blue-200', iconText: 'text-blue-600' },
+            { id: 'green', name: 'ירוק', classes: 'bg-green-100 text-green-700 border-green-300', iconBg: 'bg-green-200', iconText: 'text-green-600' },
+            { id: 'purple', name: 'סגול', classes: 'bg-purple-100 text-purple-700 border-purple-300', iconBg: 'bg-purple-200', iconText: 'text-purple-600' },
+            { id: 'yellow', name: 'צהוב', classes: 'bg-yellow-100 text-yellow-700 border-yellow-300', iconBg: 'bg-yellow-200', iconText: 'text-yellow-600' },
+            { id: 'orange', name: 'כתום', classes: 'bg-orange-100 text-orange-700 border-orange-300', iconBg: 'bg-orange-200', iconText: 'text-orange-600' },
+            { id: 'teal', name: 'טורקיז', classes: 'bg-teal-100 text-teal-700 border-teal-300', iconBg: 'bg-teal-200', iconText: 'text-teal-600' },
+            { id: 'red', name: 'אדום', classes: 'bg-red-100 text-red-700 border-red-300', iconBg: 'bg-red-200', iconText: 'text-red-600' },
         ];
 
         const CHILDREN_DEFAULTS = [
-            { id: 'mushka', name: 'חיה מושקא', defaultThemeId: 'yellow', defaultIconKey: 'home', initialTasks: [{ id: 'def_mushka_1', text: 'רצפה', type: 'daily' }] },
-            { id: 'dvora', name: 'דבורה לאה', defaultThemeId: 'pink', defaultIconKey: 'utensils', initialTasks: [{ id: 'def_dvora_1', text: 'כלים חלבי ושיש', type: 'daily' }] },
-            { id: 'rivka', name: 'רבקה', defaultThemeId: 'purple', defaultIconKey: 'utensils', initialTasks: [{ id: 'def_rivka_1', text: 'לפנות שולחן', type: 'daily' }, { id: 'def_rivka_2', text: 'לערוך לארוחת ערב', type: 'daily' }] },
-            { id: 'shmuel', name: 'שמואל', defaultThemeId: 'blue', defaultIconKey: 'shirt', initialTasks: [{ id: 'def_shmuel_1', text: 'לפנות את הספה', type: 'daily' }, { id: 'def_shmuel_2', text: 'לאסוף בגדים מלוכלכים לכביסה', type: 'daily' }] },
-            { id: 'pitzo', name: 'יוסף יצחק', defaultThemeId: 'green', defaultIconKey: 'gamepad', initialTasks: [{ id: 'def_pitzo_1', text: 'לאסוף משחקים', type: 'daily' }, { id: 'def_pitzo_2', text: 'לאסוף נעליים', type: 'daily' }] }
+            { id: 'mushka', name: 'חיה מושקא', defaultThemeId: 'yellow', defaultIconKey: 'home', initialTasks: [{ id: 'def_mushka_1', text: 'רצפה', type: 'evening' }] },
+            { id: 'dvora', name: 'דבורה לאה', defaultThemeId: 'pink', defaultIconKey: 'utensils', initialTasks: [{ id: 'def_dvora_1', text: 'כלים חלבי ושיש', type: 'evening' }] },
+            { id: 'rivka', name: 'רבקה', defaultThemeId: 'purple', defaultIconKey: 'utensils', initialTasks: [{ id: 'def_rivka_1', text: 'לפנות שולחן', type: 'evening' }, { id: 'def_rivka_2', text: 'לערוך לארוחת ערב', type: 'evening' }] },
+            { id: 'shmuel', name: 'שמואל', defaultThemeId: 'blue', defaultIconKey: 'shirt', initialTasks: [{ id: 'def_shmuel_1', text: 'לפנות את הספה', type: 'evening' }, { id: 'def_shmuel_2', text: 'לאסוף בגדים מלוכלכים לכביסה', type: 'evening' }] },
+            { id: 'pitzo', name: 'יוסף יצחק', defaultThemeId: 'green', defaultIconKey: 'gamepad', initialTasks: [{ id: 'def_pitzo_1', text: 'לאסוף משחקים', type: 'evening' }, { id: 'def_pitzo_2', text: 'לאסוף נעליים', type: 'evening' }] }
         ];
 
         const FAMILY_DEFAULT = { defaultThemeId: 'yellow', defaultIconKey: 'trophy', defaultTitle: 'המבצע המשפחתי', defaultTarget: 100 };
@@ -120,39 +143,54 @@
             return letters[n] || n;
         };
 
-        const resizeImage = (file) => new Promise((resolve) => {
-            const reader = new FileReader();
-            reader.onload = (e) => {
-                const img = new Image();
-                img.onload = () => {
-                    const canvas = document.createElement('canvas');
-                    const MAX_WIDTH = 300, MAX_HEIGHT = 300;
-                    let width = img.width, height = img.height;
-                    if (width > height) { if (width > MAX_WIDTH) { height *= MAX_WIDTH / width; width = MAX_WIDTH; } } 
-                    else { if (height > MAX_HEIGHT) { width *= MAX_HEIGHT / height; height = MAX_HEIGHT; } }
-                    canvas.width = width; canvas.height = height;
-                    const ctx = canvas.getContext('2d');
-                    ctx.drawImage(img, 0, 0, width, height);
-                    resolve(canvas.toDataURL('image/jpeg', 0.7));
+        const resizeImage = (file) => {
+            return new Promise((resolve) => {
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    const img = new Image();
+                    img.onload = () => {
+                        const canvas = document.createElement('canvas');
+                        const MAX_WIDTH = 300;
+                        const MAX_HEIGHT = 300;
+                        let width = img.width;
+                        let height = img.height;
+                        if (width > height) { if (width > MAX_WIDTH) { height *= MAX_WIDTH / width; width = MAX_WIDTH; } } 
+                        else { if (height > MAX_HEIGHT) { width *= MAX_HEIGHT / height; height = MAX_HEIGHT; } }
+                        canvas.width = width;
+                        canvas.height = height;
+                        const ctx = canvas.getContext('2d');
+                        ctx.drawImage(img, 0, 0, width, height);
+                        resolve(canvas.toDataURL('image/jpeg', 0.7));
+                    };
+                    img.src = event.target.result;
                 };
-                img.src = e.target.result;
-            };
-            reader.readAsDataURL(file);
-        });
+                reader.readAsDataURL(file);
+            });
+        };
+
+        const playSuccessSound = () => {
+            try {
+                const audio = new Audio('https://assets.mixkit.co/sfx/preview/mixkit-unlock-game-notification-253.mp3');
+                audio.volume = 0.5;
+                audio.play().catch(e => console.log("Audio play failed", e));
+            } catch (e) { console.error("Audio error", e); }
+        };
+
+        // --- COMPONENTS ---
 
         function Confetti({ density = 150 }) {
             const canvasRef = useRef(null);
             useEffect(() => {
-                const canvas = canvasRef.current; if (!canvas) return;
+                const canvas = canvasRef.current;
+                if (!canvas) return;
                 const ctx = canvas.getContext('2d');
                 const updateSize = () => { canvas.width = window.innerWidth; canvas.height = window.innerHeight; };
-                updateSize(); window.addEventListener('resize', updateSize);
+                updateSize();
+                window.addEventListener('resize', updateSize);
                 const colors = ['#FCD34D', '#F87171', '#60A5FA', '#34D399', '#A78BFA', '#F472B6'];
                 const particles = Array.from({ length: density }).map(() => ({
-                    x: Math.random() * canvas.width, y: -Math.random() * canvas.height,
-                    color: colors[Math.floor(Math.random() * colors.length)],
-                    size: Math.random() * 8 + 4, weight: Math.random() * 3 + 2,
-                    angle: Math.random() * 360, spin: Math.random() * 5 - 2.5, oscillationSpeed: Math.random() * 0.05 + 0.02
+                    x: Math.random() * canvas.width, y: -Math.random() * canvas.height, color: colors[Math.floor(Math.random() * colors.length)],
+                    size: Math.random() * 8 + 4, weight: Math.random() * 3 + 2, angle: Math.random() * 360, spin: Math.random() * 5 - 2.5, oscillationSpeed: Math.random() * 0.05 + 0.02
                 }));
                 let animationId;
                 function animate() {
@@ -160,479 +198,610 @@
                     particles.forEach(p => {
                         p.y += p.weight; p.angle += p.spin; p.x += Math.sin(p.angle * p.oscillationSpeed) * 2;
                         if (p.y > canvas.height) { p.y = -10; p.x = Math.random() * canvas.width; }
-                        ctx.save(); ctx.translate(p.x, p.y); ctx.rotate(p.angle * Math.PI / 180);
-                        ctx.fillStyle = p.color; ctx.fillRect(-p.size / 2, -p.size / 2, p.size, p.size); ctx.restore();
+                        ctx.save(); ctx.translate(p.x, p.y); ctx.rotate(p.angle * Math.PI / 180); ctx.fillStyle = p.color;
+                        ctx.fillRect(-p.size / 2, -p.size / 2, p.size, p.size); ctx.restore();
                     });
                     animationId = requestAnimationFrame(animate);
                 }
-                animate(); return () => { cancelAnimationFrame(animationId); window.removeEventListener('resize', updateSize); };
+                animate();
+                return () => { cancelAnimationFrame(animationId); window.removeEventListener('resize', updateSize); };
             }, [density]);
             return <canvas ref={canvasRef} className="fixed inset-0 pointer-events-none z-[100]" />;
         }
 
-        // --- MAIN APP ---
-        function App() {
+        const BonusModal = ({ onClose, onConfirm }) => {
+            const [amount, setAmount] = useState(1);
+            return (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm animate-fade-in">
+                    <div className="bg-white w-full max-w-md rounded-3xl shadow-2xl p-6 text-center animate-scale-up">
+                        <div className="mx-auto w-16 h-16 bg-gradient-to-br from-orange-400 to-red-500 rounded-full flex items-center justify-center mb-4 shadow-lg"><Icons.Sparkles className="w-8 h-8 text-white" /></div>
+                        <h3 className="text-2xl font-bold text-slate-800 mb-2">הוספת בונוס</h3>
+                        <p className="text-slate-600 mb-6">כמה נקודות להוסיף למאמץ המשפחתי?</p>
+                        <div className="flex items-center justify-center gap-4 mb-8">
+                            <button onClick={() => setAmount(Math.max(1, amount - 1))} className="w-12 h-12 rounded-full bg-slate-100 flex items-center justify-center text-slate-600 font-bold hover:bg-slate-200 transition-colors shadow-sm"><Icons.Minus className="w-6 h-6" /></button>
+                            <div className="text-6xl font-black text-transparent bg-clip-text bg-gradient-to-r from-orange-500 to-red-600 w-24 tabular-nums">{amount}</div>
+                            <button onClick={() => setAmount(Math.min(10, amount + 1))} className="w-12 h-12 rounded-full bg-slate-100 flex items-center justify-center text-slate-600 font-bold hover:bg-slate-200 transition-colors shadow-sm"><Icons.Plus className="w-6 h-6" /></button>
+                        </div>
+                        <input type="range" min="1" max="10" value={amount} onChange={(e) => setAmount(parseInt(e.target.value))} className="w-full mb-8 accent-orange-500 h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer" />
+                        <div className="flex gap-4 justify-center">
+                            <button onClick={onClose} className="px-6 py-3 rounded-xl border-2 border-slate-200 text-slate-600 font-bold hover:bg-slate-50 transition-colors">ביטול</button>
+                            <button onClick={() => onConfirm(amount)} className="px-8 py-3 rounded-xl bg-gradient-to-r from-orange-400 to-red-500 text-white font-bold shadow-lg hover:shadow-xl hover:scale-105 transition-all">הוסף {amount} נקודות!</button>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        const PinModal = ({ onClose, onSuccess, correctPin }) => {
+            const [pin, setPin] = useState("");
+            const [error, setError] = useState(false);
+            const handleNumber = (num) => { if (pin.length < 4) { setPin(prev => prev + num); setError(false); } };
+            const handleBackspace = () => setPin(prev => prev.slice(0, -1));
+            const handleSubmit = () => { if (pin === correctPin) { onSuccess(); } else { setError(true); setPin(""); } };
+            return (
+                <div className="fixed inset-0 z-[120] flex items-center justify-center p-4 bg-black/50 backdrop-blur-md animate-fade-in">
+                    <div className="bg-white w-full max-w-sm rounded-3xl shadow-2xl p-6 text-center">
+                        <div className="mb-6"><div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4"><Icons.Lock className="w-8 h-8 text-slate-500" /></div><h3 className="text-xl font-bold text-slate-800">קוד הורים</h3><p className="text-slate-500 text-sm">אנא הקש קוד גישה לביצוע פעולה זו</p></div>
+                        <div className="flex justify-center gap-4 mb-8">{[0, 1, 2, 3].map(i => (<div key={i} className={`w-4 h-4 rounded-full transition-all ${i < pin.length ? 'bg-blue-500 scale-110' : 'bg-slate-200'}`} />))}</div>
+                        {error && <p className="text-red-500 text-sm font-bold mb-4 animate-pulse">קוד שגוי, נסה שנית</p>}
+                        <div className="grid grid-cols-3 gap-3 mb-6">{[1, 2, 3, 4, 5, 6, 7, 8, 9].map(n => (<button key={n} onClick={() => handleNumber(n)} className="h-16 rounded-2xl bg-slate-50 hover:bg-slate-100 font-bold text-2xl text-slate-700 transition-colors shadow-sm">{n}</button>))}<div></div><button onClick={() => handleNumber(0)} className="h-16 rounded-2xl bg-slate-50 hover:bg-slate-100 font-bold text-2xl text-slate-700 transition-colors shadow-sm">0</button><button onClick={handleBackspace} className="h-16 rounded-2xl hover:bg-red-50 flex items-center justify-center text-slate-400 hover:text-red-500 transition-colors"><Icons.X className="w-6 h-6" /></button></div>
+                        <div className="flex gap-2"><button onClick={onClose} className="flex-1 py-3 rounded-xl bg-slate-100 font-bold text-slate-600 hover:bg-slate-200">ביטול</button><button onClick={handleSubmit} className="flex-1 py-3 rounded-xl bg-blue-600 font-bold text-white hover:bg-blue-700 shadow-md">אישור</button></div>
+                    </div>
+                </div>
+            );
+        };
+
+        const TaskItem = ({ task, childId, isDone, onToggleTask, onDeleteTask, onEditTask, onMoveTask }) => {
+            const [isEditing, setIsEditing] = useState(false);
+            const [editText, setEditText] = useState(task.text);
+            const [editType, setEditType] = useState(task.type);
+
+            const handleSave = () => {
+                onEditTask(childId, task.id, editText, editType);
+                setIsEditing(false);
+            };
+
+            if (isEditing) {
+                return (
+                    <div className="bg-slate-50 p-4 rounded-2xl border-2 border-blue-200 mb-3 animate-fade-in">
+                        <input type="text" value={editText} onChange={(e) => setEditText(e.target.value)} className="w-full p-2 mb-3 rounded-lg border border-slate-300" />
+                        <div className="grid grid-cols-2 gap-2 mb-3">
+                            <button onClick={() => setEditType('morning')} className={`py-1 text-xs rounded border ${editType === 'morning' ? 'bg-orange-100 border-orange-300' : 'bg-white'}`}>בוקר</button>
+                            <button onClick={() => setEditType('evening')} className={`py-1 text-xs rounded border ${editType === 'evening' ? 'bg-indigo-100 border-indigo-300' : 'bg-white'}`}>ערב</button>
+                            <button onClick={() => setEditType('friday')} className={`py-1 text-xs rounded border ${editType === 'friday' ? 'bg-pink-100 border-pink-300' : 'bg-white'}`}>שישי</button>
+                            <button onClick={() => setEditType('one-time')} className={`py-1 text-xs rounded border ${editType === 'one-time' ? 'bg-blue-100 border-blue-300' : 'bg-white'}`}>היום</button>
+                        </div>
+                        <div className="flex justify-between items-center">
+                            <div className="flex gap-2">
+                                <button onClick={() => onMoveTask(childId, task.id, 'up')} className="p-2 bg-white rounded-lg border hover:bg-slate-100"><Icons.ArrowUp className="w-4 h-4" /></button>
+                                <button onClick={() => onMoveTask(childId, task.id, 'down')} className="p-2 bg-white rounded-lg border hover:bg-slate-100"><Icons.ArrowDown className="w-4 h-4" /></button>
+                            </div>
+                            <div className="flex gap-2">
+                                <button onClick={() => setIsEditing(false)} className="p-2 text-slate-500">ביטול</button>
+                                <button onClick={handleSave} className="p-2 bg-blue-500 text-white rounded-lg"><Icons.Save className="w-4 h-4" /></button>
+                            </div>
+                        </div>
+                    </div>
+                );
+            }
+
+            return (
+                <div className="relative group mb-3 flex items-center gap-2">
+                    <button type="button" onClick={() => onToggleTask(childId, task.id, task.text)} className={`flex-1 flex items-center justify-between p-5 rounded-2xl border-2 transition-all duration-200 cursor-pointer select-none active:scale-[0.98] ${isDone ? 'bg-green-50 border-green-200 shadow-none' : 'bg-white border-slate-100 shadow-md hover:border-blue-200'}`} style={{ WebkitTapHighlightColor: 'transparent' }}>
+                        <div className="flex items-center gap-3">
+                            {task.type === 'one-time' && <Icons.Calendar className="w-4 h-4 text-blue-400" />}
+                            {task.type === 'daily' && <Icons.Repeat className="w-4 h-4 text-purple-400" />}
+                            {task.type === 'friday' && <Icons.CalendarDays className="w-4 h-4 text-pink-400" />}
+                            {task.type === 'morning' && <Icons.Sunrise className="w-4 h-4 text-orange-400" />}
+                            {(task.type === 'evening' || task.type === 'daily') && <Icons.Moon className="w-4 h-4 text-indigo-400" />}
+                            <span className={`text-xl font-medium ${isDone ? 'text-green-800 line-through opacity-70' : 'text-slate-700'}`}>{task.text}</span>
+                        </div>
+                        <div className={`w-10 h-10 rounded-full flex items-center justify-center border-2 transition-all ${isDone ? 'bg-green-500 border-green-500 scale-110' : 'bg-white border-slate-300 group-hover:border-blue-400'}`}>
+                            {isDone && <Icons.Check className="w-6 h-6 text-white" />}
+                        </div>
+                    </button>
+                    <button onClick={() => setIsEditing(true)} className="p-3 bg-slate-100 rounded-xl text-slate-400 hover:text-blue-500 hover:bg-blue-50 transition-colors"><Icons.Pencil className="w-5 h-5" /></button>
+                    <button onClick={(e) => { e.stopPropagation(); onDeleteTask(childId, task.id); }} className="p-3 bg-red-50 rounded-xl text-red-300 hover:text-red-500 hover:bg-red-100 transition-colors" title="מחק משימה"><Icons.Trash2 className="w-5 h-5" /></button>
+                </div>
+            );
+        };
+
+        const TaskModal = ({ child, tasks, completedTasks, visuals, onToggleTask, onClose, onAddTask, onDeleteTask, onEditTask, onMoveTask, getTodayKey }) => {
+            const { theme, IconComponent, useEmoji, emoji, useImage, image, name } = visuals;
+            const [isAdding, setIsAdding] = useState(false);
+            const [newTaskText, setNewTaskText] = useState("");
+            const [newTaskType, setNewTaskType] = useState("evening");
+            const [addToAll, setAddToAll] = useState(false);
+
+            const handleAddSubmit = () => {
+                if (!newTaskText.trim()) return;
+                onAddTask(child.id, newTaskText, newTaskType, addToAll);
+                setNewTaskText("");
+                setAddToAll(false);
+                setIsAdding(false);
+            }
+
+            const morningTasks = tasks.filter(t => t.type === 'morning');
+            const eveningTasks = tasks.filter(t => t.type !== 'morning');
+
+            return (
+                <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm animate-fade-in" onClick={onClose}>
+                    <div className="bg-white w-full max-w-lg rounded-3xl shadow-2xl overflow-hidden animate-slide-up flex flex-col max-h-[90vh] z-[70] relative" onClick={(e) => e.stopPropagation()}>
+                        <div className={`${theme.iconBg} p-6 flex items-center justify-between flex-shrink-0`}>
+                            <div className="flex items-center gap-4">
+                                <div className="bg-white/50 p-1 rounded-full flex items-center justify-center w-16 h-16 overflow-hidden border-2 border-white/50">
+                                    {useImage && image ? <img src={image} alt={name} className="w-full h-full object-cover rounded-full" /> : useEmoji ? <span className="text-3xl">{emoji}</span> : <IconComponent className={`w-8 h-8 ${theme.iconText}`} />}
+                                </div>
+                                <div><h2 className="text-3xl font-bold text-slate-800">{name}</h2><p className="text-slate-600 text-lg">המשימות להיום</p></div>
+                            </div>
+                            <button onClick={onClose} className="bg-white/50 p-2 rounded-full hover:bg-white/80 transition-colors"><Icons.X className="w-6 h-6 text-slate-700" /></button>
+                        </div>
+                        <div className="p-8 space-y-2 overflow-y-auto flex-1">
+                            {morningTasks.length > 0 && (
+                                <div className="mb-6">
+                                    <h4 className="text-lg font-bold text-orange-500 mb-3 flex items-center gap-2"><Icons.Sunrise className="w-5 h-5" />בוקר</h4>
+                                    {morningTasks.map(task => <TaskItem key={task.id} task={task} childId={child.id} isDone={completedTasks[`${getTodayKey()}_${child.id}_${task.id}`]} onToggleTask={onToggleTask} onDeleteTask={onDeleteTask} onEditTask={onEditTask} onMoveTask={onMoveTask} />)}
+                                </div>
+                            )}
+                            {(eveningTasks.length > 0 || tasks.length === 0) && (
+                                <div>
+                                    <h4 className="text-lg font-bold text-indigo-500 mb-3 flex items-center gap-2"><Icons.Moon className="w-5 h-5" />ערב</h4>
+                                    {eveningTasks.map(task => <TaskItem key={task.id} task={task} childId={child.id} isDone={completedTasks[`${getTodayKey()}_${child.id}_${task.id}`]} onToggleTask={onToggleTask} onDeleteTask={onDeleteTask} onEditTask={onEditTask} onMoveTask={onMoveTask} />)}
+                                    {tasks.length === 0 && <p className="text-center text-gray-400">אין משימות להיום</p>}
+                                </div>
+                            )}
+                            {tasks.length > 0 && tasks.every((t) => completedTasks[`${getTodayKey()}_${child.id}_${t.id}`]) && (
+                                <div className="mt-6 text-center bg-yellow-50 p-4 rounded-xl border border-yellow-200 text-yellow-800 animate-pulse">
+                                    <Icons.Star className="w-8 h-8 mx-auto mb-2 text-yellow-500 fill-yellow-500" /><p className="font-bold text-lg">כל הכבוד! סיימת את כל המשימות להיום!</p>
+                                </div>
+                            )}
+                        </div>
+                        <div className="p-4 border-t border-slate-100 bg-slate-50">
+                            {!isAdding ? (
+                                <button onClick={() => setIsAdding(true)} className="w-full py-3 rounded-xl border-2 border-dashed border-slate-300 text-slate-500 font-bold hover:bg-white hover:border-blue-400 hover:text-blue-500 transition-all flex items-center justify-center gap-2"><Icons.Plus className="w-5 h-5" />הוסף משימה חדשה</button>
+                            ) : (
+                                <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm animate-fade-in">
+                                    <input type="text" placeholder="שם המשימה..." value={newTaskText} onChange={(e) => setNewTaskText(e.target.value)} className="w-full p-3 rounded-lg border border-slate-300 mb-3 focus:outline-none focus:ring-2 focus:ring-blue-200" autoFocus />
+                                    <div className="grid grid-cols-2 gap-2 mb-3">
+                                        <button onClick={() => setNewTaskType('morning')} className={`py-2 rounded-lg text-sm font-bold flex items-center justify-center gap-2 border ${newTaskType === 'morning' ? 'bg-orange-100 text-orange-700 border-orange-300' : 'bg-slate-50 text-slate-500 border-slate-200'}`}><Icons.Sunrise className="w-4 h-4" />כל בוקר</button>
+                                        <button onClick={() => setNewTaskType('evening')} className={`py-2 rounded-lg text-sm font-bold flex items-center justify-center gap-2 border ${newTaskType === 'evening' ? 'bg-indigo-100 text-indigo-700 border-indigo-300' : 'bg-slate-50 text-slate-500 border-slate-200'}`}><Icons.Moon className="w-4 h-4" />כל ערב</button>
+                                        <button onClick={() => setNewTaskType('friday')} className={`py-2 rounded-lg text-sm font-bold flex items-center justify-center gap-2 border ${newTaskType === 'friday' ? 'bg-pink-100 text-pink-700 border-pink-300' : 'bg-slate-50 text-slate-500 border-slate-200'}`}><Icons.CalendarDays className="w-4 h-4" />יום שישי</button>
+                                        <button onClick={() => setNewTaskType('one-time')} className={`py-2 rounded-lg text-sm font-bold flex items-center justify-center gap-2 border ${newTaskType === 'one-time' ? 'bg-blue-100 text-blue-700 border-blue-300' : 'bg-slate-50 text-slate-500 border-slate-200'}`}><Icons.Calendar className="w-4 h-4" />רק להיום</button>
+                                    </div>
+                                    <label className="flex items-center gap-2 mb-4 p-2 bg-slate-50 rounded-lg cursor-pointer">
+                                        <input type="checkbox" checked={addToAll} onChange={(e) => setAddToAll(e.target.checked)} className="w-5 h-5 text-blue-600 rounded focus:ring-blue-500 border-gray-300" />
+                                        <span className="text-sm font-bold text-slate-600">הוסף לכל הילדים</span>
+                                    </label>
+                                    <div className="flex gap-2">
+                                        <button onClick={() => setIsAdding(false)} className="flex-1 py-2 text-slate-500 font-bold hover:bg-slate-100 rounded-lg">ביטול</button>
+                                        <button onClick={handleAddSubmit} className="flex-1 py-2 bg-blue-600 text-white font-bold rounded-lg hover:bg-blue-700 shadow-md">שמור</button>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        const EditChildModal = ({ childId, initialSettings, currentSettings, childName, onClose, onSave }) => {
+            const getInitialTab = () => { if (currentSettings.useImage) return 'image'; if (currentSettings.useEmoji) return 'emoji'; return 'icon'; };
+            const [activeTab, setActiveTab] = useState(getInitialTab());
+            const [selectedThemeId, setSelectedThemeId] = useState(currentSettings.themeId || initialSettings.theme.id);
+            const [selectedIconKey, setSelectedIconKey] = useState(currentSettings.iconKey || Object.keys(ICON_MAP).find(key => ICON_MAP[key] === initialSettings.IconComponent) || 'smile');
+            const [customEmoji, setCustomEmoji] = useState(currentSettings.emoji || initialSettings.emoji);
+            const [customImage, setCustomImage] = useState(currentSettings.image || initialSettings.image);
+            const [customName, setCustomName] = useState(currentSettings.name || initialSettings.name);
+            const [isProcessingImage, setIsProcessingImage] = useState(false);
+
+            const handleImageUpload = async (e) => {
+                const file = e.target.files[0];
+                if (file) {
+                    setIsProcessingImage(true);
+                    try { const resizedBase64 = await resizeImage(file); setCustomImage(resizedBase64); } catch (err) { console.error("Image processing error", err); } finally { setIsProcessingImage(false); }
+                }
+            };
+            const handleSave = () => { onSave(childId, { themeId: selectedThemeId, useEmoji: activeTab === 'emoji', useImage: activeTab === 'image', iconKey: selectedIconKey, emoji: customEmoji || '😊', image: customImage || null, name: customName }); };
+
+            return (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-fade-in">
+                    <div className="bg-white w-full max-w-lg rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
+                        <div className="p-6 border-b border-slate-100 flex justify-between items-center bg-slate-50"><h3 className="text-xl font-bold text-slate-800">עריכת פרטי ילד</h3><button onClick={onClose} className="p-2 hover:bg-slate-200 rounded-full"><Icons.X className="w-5 h-5" /></button></div>
+                        <div className="p-6 overflow-y-auto flex-1">
+                            <div className="mb-6"><h4 className="flex items-center gap-2 font-bold text-slate-700 mb-3"><Icons.Type className="w-5 h-5 text-slate-500" />שם הילד</h4><input type="text" value={customName} onChange={(e) => setCustomName(e.target.value)} className="w-full p-3 rounded-xl border border-slate-300 focus:border-blue-500 focus:ring-4 focus:ring-blue-100 outline-none text-lg" placeholder="הכנס שם..." /></div>
+                            <div className="mb-8"><h4 className="flex items-center gap-2 font-bold text-slate-700 mb-3"><Icons.Palette className="w-5 h-5 text-purple-500" />בחר צבע</h4><div className="flex flex-wrap gap-3">{THEMES.map(theme => (<button key={theme.id} onClick={() => setSelectedThemeId(theme.id)} className={`w-10 h-10 rounded-full border-2 flex items-center justify-center transition-all ${theme.classes.split(' ')[0]} ${selectedThemeId === theme.id ? 'border-slate-800 scale-110 shadow-md ring-2 ring-slate-200' : 'border-transparent'}`}>{selectedThemeId === theme.id && <Icons.Check className={`w-5 h-5 ${theme.classes.split(' ')[1]}`} />}</button>))}</div></div>
+                            <div>
+                                <h4 className="flex items-center gap-2 font-bold text-slate-700 mb-3"><Icons.Smile className="w-5 h-5 text-orange-500" />בחר סמל, אימוג'י או תמונה</h4>
+                                <div className="flex bg-slate-100 p-1 rounded-xl mb-4"><button onClick={() => setActiveTab('icon')} className={`flex-1 py-2 rounded-lg font-medium transition-all ${activeTab === 'icon' ? 'bg-white shadow text-slate-800' : 'text-slate-500 hover:text-slate-700'}`}>סמלים</button><button onClick={() => setActiveTab('emoji')} className={`flex-1 py-2 rounded-lg font-medium transition-all ${activeTab === 'emoji' ? 'bg-white shadow text-slate-800' : 'text-slate-500 hover:text-slate-700'}`}>אימוג'י</button><button onClick={() => setActiveTab('image')} className={`flex-1 py-2 rounded-lg font-medium transition-all flex items-center justify-center gap-2 ${activeTab === 'image' ? 'bg-white shadow text-slate-800' : 'text-slate-500 hover:text-slate-700'}`}><Icons.Camera className="w-4 h-4" />תמונה</button></div>
+                                {activeTab === 'icon' && (<div className="grid grid-cols-5 gap-3">{Object.entries(ICON_MAP).map(([key, IconCmp]) => (<button key={key} onClick={() => setSelectedIconKey(key)} className={`aspect-square rounded-xl flex items-center justify-center border-2 transition-all ${selectedIconKey === key ? 'bg-blue-50 border-blue-500 text-blue-600' : 'bg-white border-slate-200 text-slate-400 hover:border-blue-200'}`}><IconCmp className="w-6 h-6" /></button>))}</div>)}
+                                {activeTab === 'emoji' && (<div className="flex flex-col items-center p-4 bg-slate-50 rounded-xl border border-slate-200"><label className="text-sm text-slate-500 mb-2">הקלד או הדבק אימוג'י כאן:</label><input type="text" value={customEmoji} onChange={(e) => setCustomEmoji(e.target.value)} className="w-24 h-24 text-center text-6xl rounded-2xl border-2 border-slate-300 focus:border-blue-500 focus:ring-4 focus:ring-blue-100 outline-none bg-white" maxLength={2} /></div>)}
+                                {activeTab === 'image' && (<div className="flex flex-col items-center p-4 bg-slate-50 rounded-xl border border-slate-200"><div className="relative w-32 h-32 mb-4 group cursor-pointer">{customImage ? (<img src={customImage} alt="Preview" className="w-full h-full object-cover rounded-full border-4 border-white shadow-md" />) : (<div className="w-full h-full rounded-full bg-slate-200 flex items-center justify-center border-4 border-white shadow-md"><Icons.ImageIcon className="w-10 h-10 text-slate-400" /></div>)}<label htmlFor="file-upload" className="absolute inset-0 flex items-center justify-center bg-black/30 text-white opacity-0 group-hover:opacity-100 rounded-full transition-opacity cursor-pointer"><Icons.Upload className="w-8 h-8" /></label><input id="file-upload" type="file" accept="image/*" onChange={handleImageUpload} className="hidden" /></div>{isProcessingImage ? (<p className="text-sm text-blue-500 animate-pulse">מעבד תמונה...</p>) : (<label htmlFor="file-upload" className="px-4 py-2 bg-white border border-slate-300 rounded-lg text-sm font-medium hover:bg-slate-50 cursor-pointer">בחר תמונה</label>)}<p className="text-xs text-slate-400 mt-2 text-center">בחר תמונה מהמכשיר. התמונה תוקטן אוטומטית.</p></div>)}
+                            </div>
+                        </div>
+                        <div className="p-6 border-t border-slate-100 bg-slate-50 flex justify-end gap-3"><button onClick={onClose} className="px-5 py-2.5 rounded-xl font-bold text-slate-500 hover:bg-slate-200 transition-colors">ביטול</button><button onClick={handleSave} className="px-8 py-2.5 rounded-xl font-bold text-white bg-blue-600 hover:bg-blue-700 shadow-lg shadow-blue-200 transition-all">שמור שינויים</button></div>
+                    </div>
+                </div>
+            );
+        };
+
+        const EditFamilyModal = ({ initialSettings, currentSettings, onClose, onSave }) => {
+            const getInitialTab = () => { if (currentSettings.useImage) return 'image'; if (currentSettings.useEmoji) return 'emoji'; return 'icon'; };
+            const [activeTab, setActiveTab] = useState(getInitialTab());
+            const [selectedThemeId, setSelectedThemeId] = useState(currentSettings.themeId || initialSettings.theme.id);
+            const [selectedIconKey, setSelectedIconKey] = useState(currentSettings.iconKey || 'trophy');
+            const [customEmoji, setCustomEmoji] = useState(currentSettings.emoji || '🏆');
+            const [customImage, setCustomImage] = useState(currentSettings.image || null);
+            const [customTitle, setCustomTitle] = useState(currentSettings.title || initialSettings.title);
+            const [customTarget, setCustomTarget] = useState(currentSettings.targetPoints || FAMILY_DEFAULT.defaultTarget);
+            const [customPin, setCustomPin] = useState(currentSettings.parentPin || "");
+            const [isProcessingImage, setIsProcessingImage] = useState(false);
+
+            const handleImageUpload = async (e) => {
+                const file = e.target.files[0];
+                if (file) {
+                setIsProcessingImage(true);
+                try { const resizedBase64 = await resizeImage(file); setCustomImage(resizedBase64); } catch (err) { console.error("Image processing error", err); } finally { setIsProcessingImage(false); }
+                }
+            };
+
+            const handleSave = () => {
+                onSave({
+                    themeId: selectedThemeId,
+                    useEmoji: activeTab === 'emoji',
+                    useImage: activeTab === 'image',
+                    iconKey: selectedIconKey,
+                    emoji: customEmoji || '🏆',
+                    image: customImage || null,
+                    title: customTitle,
+                    targetPoints: Number(customTarget),
+                    parentPin: customPin // Save PIN
+                });
+            };
+
+            return (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-fade-in">
+                <div className="bg-white w-full max-w-lg rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
+                    <div className="p-6 border-b border-slate-100 flex justify-between items-center bg-slate-50"><h3 className="text-xl font-bold text-slate-800">עריכת כותרת וסמל</h3><button onClick={onClose} className="p-2 hover:bg-slate-200 rounded-full"><Icons.X className="w-5 h-5" /></button></div>
+                    <div className="p-6 overflow-y-auto flex-1">
+                        <div className="mb-6"><h4 className="flex items-center gap-2 font-bold text-slate-700 mb-3"><Icons.Type className="w-5 h-5 text-slate-500" />כותרת האפליקציה</h4><input type="text" value={customTitle} onChange={(e) => setCustomTitle(e.target.value)} className="w-full p-3 rounded-xl border border-slate-300 focus:border-blue-500 focus:ring-4 focus:ring-blue-100 outline-none text-lg" placeholder="הכנס כותרת..." /></div>
+                        <div className="mb-6"><h4 className="flex items-center gap-2 font-bold text-slate-700 mb-3"><Icons.Target className="w-5 h-5 text-slate-500" />יעד נקודות</h4><input type="number" value={customTarget} onChange={(e) => setCustomTarget(e.target.value)} className="w-full p-3 rounded-xl border border-slate-300 focus:border-blue-500 focus:ring-4 focus:ring-blue-100 outline-none text-lg" placeholder="100" min="1" /></div>
+                        <div className="mb-6"><h4 className="flex items-center gap-2 font-bold text-slate-700 mb-3"><Icons.Lock className="w-5 h-5 text-slate-500" />קוד הורים (אופציונלי)</h4><input type="text" maxLength="4" value={customPin} onChange={(e) => setCustomPin(e.target.value.replace(/\D/g, ''))} className="w-full p-3 rounded-xl border border-slate-300 focus:border-blue-500 focus:ring-4 focus:ring-blue-100 outline-none text-lg tracking-widest text-center" placeholder="הגדר קוד (4 ספרות)" /><p className="text-xs text-slate-400 mt-1">השאר ריק כדי לבטל נעילה</p></div>
+                        <div className="mb-8"><h4 className="flex items-center gap-2 font-bold text-slate-700 mb-3"><Icons.Palette className="w-5 h-5 text-purple-500" />בחר צבע</h4><div className="flex flex-wrap gap-3">{THEMES.map(theme => (<button key={theme.id} onClick={() => setSelectedThemeId(theme.id)} className={`w-10 h-10 rounded-full border-2 flex items-center justify-center transition-all ${theme.classes.split(' ')[0]} ${selectedThemeId === theme.id ? 'border-slate-800 scale-110 shadow-md ring-2 ring-slate-200' : 'border-transparent'}`}>{selectedThemeId === theme.id && <Icons.Check className={`w-5 h-5 ${theme.classes.split(' ')[1]}`} />}</button>))}</div></div>
+                        <div>
+                            <h4 className="flex items-center gap-2 font-bold text-slate-700 mb-3"><Icons.Smile className="w-5 h-5 text-orange-500" />בחר סמל, אימוג'י או תמונה</h4>
+                            <div className="flex bg-slate-100 p-1 rounded-xl mb-4"><button onClick={() => setActiveTab('icon')} className={`flex-1 py-2 rounded-lg font-medium transition-all ${activeTab === 'icon' ? 'bg-white shadow text-slate-800' : 'text-slate-500 hover:text-slate-700'}`}>סמלים</button><button onClick={() => setActiveTab('emoji')} className={`flex-1 py-2 rounded-lg font-medium transition-all ${activeTab === 'emoji' ? 'bg-white shadow text-slate-800' : 'text-slate-500 hover:text-slate-700'}`}>אימוג'י</button><button onClick={() => setActiveTab('image')} className={`flex-1 py-2 rounded-lg font-medium transition-all flex items-center justify-center gap-2 ${activeTab === 'image' ? 'bg-white shadow text-slate-800' : 'text-slate-500 hover:text-slate-700'}`}><Icons.Camera className="w-4 h-4" />תמונה</button></div>
+                            {activeTab === 'icon' && (<div className="grid grid-cols-5 gap-3">{Object.entries(ICON_MAP).map(([key, IconCmp]) => (<button key={key} onClick={() => setSelectedIconKey(key)} className={`aspect-square rounded-xl flex items-center justify-center border-2 transition-all ${selectedIconKey === key ? 'bg-blue-50 border-blue-500 text-blue-600' : 'bg-white border-slate-200 text-slate-400 hover:border-blue-200'}`}><IconCmp className="w-6 h-6" /></button>))}</div>)}
+                            {activeTab === 'emoji' && (<div className="flex flex-col items-center p-4 bg-slate-50 rounded-xl border border-slate-200"><label className="text-sm text-slate-500 mb-2">הקלד או הדבק אימוג'י כאן:</label><input type="text" value={customEmoji} onChange={(e) => setCustomEmoji(e.target.value)} className="w-24 h-24 text-center text-6xl rounded-2xl border-2 border-slate-300 focus:border-blue-500 focus:ring-4 focus:ring-blue-100 outline-none bg-white" maxLength={2} /></div>)}
+                            {activeTab === 'image' && (<div className="flex flex-col items-center p-4 bg-slate-50 rounded-xl border border-slate-200"><div className="relative w-32 h-32 mb-4 group cursor-pointer">{customImage ? (<img src={customImage} alt="Preview" className="w-full h-full object-cover rounded-full border-4 border-white shadow-md" />) : (<div className="w-full h-full rounded-full bg-slate-200 flex items-center justify-center border-4 border-white shadow-md"><Icons.ImageIcon className="w-10 h-10 text-slate-400" /></div>)}<label htmlFor="file-upload-family" className="absolute inset-0 flex items-center justify-center bg-black/30 text-white opacity-0 group-hover:opacity-100 rounded-full transition-opacity cursor-pointer"><Icons.Upload className="w-8 h-8" /></label><input id="file-upload-family" type="file" accept="image/*" onChange={handleImageUpload} className="hidden" /></div>{isProcessingImage ? (<p className="text-sm text-blue-500 animate-pulse">מעבד תמונה...</p>) : (<label htmlFor="file-upload-family" className="px-4 py-2 bg-white border border-slate-300 rounded-lg text-sm font-medium hover:bg-slate-50 cursor-pointer">בחר תמונה</label>)}<p className="text-xs text-slate-400 mt-2 text-center">בחר תמונה מהמכשיר. התמונה תוקטן אוטומטית.</p></div>)}
+                        </div>
+                    </div>
+                    <div className="p-6 border-t border-slate-100 bg-slate-50 flex justify-end gap-3"><button onClick={onClose} className="px-5 py-2.5 rounded-xl font-bold text-slate-500 hover:bg-slate-200 transition-colors">ביטול</button><button onClick={handleSave} className="px-8 py-2.5 rounded-xl font-bold text-white bg-blue-600 hover:bg-blue-700 shadow-lg shadow-blue-200 transition-all">שמור שינויים</button></div>
+                </div>
+                </div>
+            );
+        };
+
+        const App = () => {
             const [user, setUser] = useState(null);
             const [points, setPoints] = useState(0);
             const [completedTasks, setCompletedTasks] = useState({});
             const [childSettings, setChildSettings] = useState({});
             const [familySettings, setFamilySettings] = useState({});
             const [tasksData, setTasksData] = useState({});
-            const [historyData, setHistoryData] = useState([]);
+            const [history, setHistory] = useState([]);
+            const [childScores, setChildScores] = useState({}); // New state for individual scores
 
             const [selectedChild, setSelectedChild] = useState(null);
             const [editingChildId, setEditingChildId] = useState(null);
             const [showFamilyEditModal, setShowFamilyEditModal] = useState(false);
             const [showBonusModal, setShowBonusModal] = useState(false);
             const [showWinModal, setShowWinModal] = useState(false);
-            const [showPinModal, setShowPinModal] = useState(false);
             const [showHistoryModal, setShowHistoryModal] = useState(false);
-            
+            const [showPinModal, setShowPinModal] = useState(false);
+            const [pendingAction, setPendingAction] = useState(null);
             const [animationClass, setAnimationClass] = useState('');
             const [showConfetti, setShowConfetti] = useState(false);
             const confettiTimeoutRef = useRef(null);
-            const pinCallback = useRef(null);
-
-            const [currentDate, setCurrentDate] = useState('');
-            const [hebrewDate, setHebrewDate] = useState('');
-            const targetPoints = familySettings.targetPoints || FAMILY_DEFAULT.defaultTarget;
-
             const longPressTimer = useRef(null);
             const isLongPress = useRef(false);
-            const createLongPressHandlers = (callback, onClick) => ({
-                onMouseDown: () => { isLongPress.current = false; longPressTimer.current = setTimeout(() => { isLongPress.current = true; callback(); }, 800); },
-                onMouseUp: (e) => { if (longPressTimer.current) clearTimeout(longPressTimer.current); if (!isLongPress.current && onClick) onClick(e); },
-                onMouseLeave: () => { if (longPressTimer.current) clearTimeout(longPressTimer.current); },
-                onTouchStart: () => { isLongPress.current = false; longPressTimer.current = setTimeout(() => { isLongPress.current = true; callback(); }, 800); },
-                onTouchEnd: (e) => { if (longPressTimer.current) clearTimeout(longPressTimer.current); if (isLongPress.current) e.preventDefault(); if (!isLongPress.current && onClick) onClick(e); }
-            });
+            const targetPoints = familySettings.targetPoints || FAMILY_DEFAULT.defaultTarget;
+            const parentPin = familySettings.parentPin || null;
+            const [currentDate, setCurrentDate] = useState('');
+            const [hebrewDate, setHebrewDate] = useState('');
 
             useEffect(() => {
-                signInAnonymously(auth);
-                onAuthStateChanged(auth, setUser);
+                auth.signInAnonymously();
+                const unsubscribe = auth.onAuthStateChanged(setUser);
                 const now = new Date();
                 setCurrentDate(now.toLocaleDateString('he-IL', { weekday: 'long', year: 'numeric', month: 'numeric', day: 'numeric' }));
                 try {
-                    const p = new Intl.DateTimeFormat('he-IL', { calendar: 'hebrew', day: 'numeric', month: 'long', year: 'numeric' }).formatToParts(now);
-                    const d = p.find(x => x.type === 'day')?.value; const m = p.find(x => x.type === 'month')?.value; const y = p.find(x => x.type === 'year')?.value;
-                    if (d && m && y) setHebrewDate(`${toHebrewNumeral(parseInt(d))} ${m} ${y}`);
-                } catch(e){}
+                    const parts = new Intl.DateTimeFormat('he-IL', { calendar: 'hebrew', day: 'numeric', month: 'long', year: 'numeric' }).formatToParts(now);
+                    const day = parts.find(p => p.type === 'day')?.value; const month = parts.find(p => p.type === 'month')?.value; const year = parts.find(p => p.type === 'year')?.value;
+                    if (day && month && year) { setHebrewDate(`${toHebrewNumeral(parseInt(day, 10))} ${month} ${year}`); }
+                } catch (e) { console.log("Hebrew cal error", e); }
+                return () => unsubscribe();
             }, []);
 
             useEffect(() => {
                 if (!user) return;
-                const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'family_project_v1', 'status');
-                return onSnapshot(docRef, (snap) => {
-                    if (snap.exists()) {
-                        const d = snap.data();
-                        setPoints(Number(d.points) || 0);
-                        setCompletedTasks(d.completedTasks || {});
-                        setChildSettings(d.childSettings || {});
-                        setFamilySettings(d.familySettings || {});
-                        setTasksData(d.childTasks || {});
-                        setHistoryData(d.history || []);
+                const docRef = db.collection('artifacts').doc(appId).collection('public').doc('data').collection('family_project_v1').doc('status');
+                const unsubscribe = docRef.onSnapshot((docSnap) => {
+                    if (docSnap.exists) {
+                        const data = docSnap.data();
+                        setPoints(Number(data.points) || 0);
+                        setCompletedTasks(data.completedTasks || {});
+                        setChildSettings(data.childSettings || {});
+                        setFamilySettings(data.familySettings || {});
+                        setTasksData(data.childTasks || {});
+                        setHistory(data.history || []);
+                        setChildScores(data.childScores || {}); // Load child scores
                     } else {
-                        setDoc(docRef, { points: 0, completedTasks: {}, childSettings: {}, familySettings: {}, childTasks: {}, history: [] });
+                        docRef.set({ points: 0, completedTasks: {}, childSettings: {}, familySettings: {}, childTasks: {}, history: [], childScores: {} });
                     }
                 });
+                return () => unsubscribe();
             }, [user]);
 
-            useEffect(() => { 
-                if (points >= targetPoints && points > 0) {
-                    if (!showWinModal) playSound('win'); 
-                    setShowWinModal(true); 
-                } 
+            useEffect(() => {
+                if (points >= targetPoints && points > 0) setShowWinModal(true);
             }, [points, targetPoints]);
 
             const getTodayKey = () => { const d = new Date(); return `${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}`; };
-            
             const getChildVisuals = (childId) => {
-                const def = CHILDREN_DEFAULTS.find(c => c.id === childId);
-                const s = childSettings[childId] || {};
-                const theme = THEMES.find(t => t.id === (s.themeId || def.defaultThemeId)) || THEMES[0];
-                const Icon = getIcon(s.iconKey || def.defaultIconKey);
-                return { ...s, theme, IconComponent: Icon, name: s.name || def.name, emoji: s.emoji || '😊' };
+                const childDefault = CHILDREN_DEFAULTS.find(c => c.id === childId);
+                const settings = childSettings[childId] || {};
+                const themeId = settings.themeId || childDefault.defaultThemeId;
+                const theme = THEMES.find(t => t.id === themeId) || THEMES[0];
+                const useImage = settings.useImage; const image = settings.image; const useEmoji = settings.useEmoji; const emoji = settings.emoji || '😊'; const iconKey = settings.iconKey || childDefault.defaultIconKey;
+                const IconComponent = ICON_MAP[iconKey] || Icons.Smile;
+                const name = settings.name || childDefault.name;
+                return { theme, IconComponent, useEmoji, emoji, useImage, image, name };
             };
-
             const getChildTasks = (childId) => {
                 if (tasksData[childId]) {
-                    const today = getTodayKey(); const day = new Date().getDay(); 
-                    return tasksData[childId].filter(t => t.type === 'daily' || (t.type === 'one-time' && t.date === today) || (t.type === 'friday' && day === 5));
+                    const today = getTodayKey(); const dayOfWeek = new Date().getDay();
+                    return tasksData[childId].filter(t => t.type === 'daily' || t.type === 'morning' || t.type === 'evening' || (t.type === 'one-time' && t.date === today) || (t.type === 'friday' && dayOfWeek === 5));
                 }
                 return CHILDREN_DEFAULTS.find(c => c.id === childId)?.initialTasks || [];
             };
-
-            const triggerConfetti = () => {
-                setAnimationClass('scale-110'); setTimeout(() => setAnimationClass(''), 200);
-                setShowConfetti(true); if (confettiTimeoutRef.current) clearTimeout(confettiTimeoutRef.current);
-                confettiTimeoutRef.current = setTimeout(() => setShowConfetti(false), 3000); 
+            const getFamilyVisuals = () => {
+                const settings = familySettings || {}; const themeId = settings.themeId || FAMILY_DEFAULT.defaultThemeId;
+                const theme = THEMES.find(t => t.id === themeId) || THEMES[0];
+                const useImage = settings.useImage; const image = settings.image; const useEmoji = settings.useEmoji; const emoji = settings.emoji || '🏆';
+                const iconKey = settings.iconKey || FAMILY_DEFAULT.defaultIconKey; const IconComponent = ICON_MAP[iconKey] || Icons.Trophy;
+                const title = settings.title || FAMILY_DEFAULT.defaultTitle;
+                return { theme, IconComponent, useEmoji, emoji, useImage, image, title };
             };
 
-            // --- PROTECTED ACTIONS ---
-            const requestPin = (callback) => {
-                pinCallback.current = callback;
-                setShowPinModal(true);
+            const verifyParentAuth = (callback) => {
+                if (!parentPin) { callback(); } else { setPendingAction(() => callback); setShowPinModal(true); }
+            };
+            const handlePinSuccess = () => { setShowPinModal(false); if (pendingAction) { pendingAction(); setPendingAction(null); } };
+
+            const addToHistoryLog = async (text, pointsDiff) => {
+                const newEntry = { text, diff: pointsDiff, timestamp: Date.now() };
+                const updatedHistory = [newEntry, ...history].slice(0, 50);
+                const docRef = db.collection('artifacts').doc(appId).collection('public').doc('data').collection('family_project_v1').doc('status');
+                await docRef.update({ history: updatedHistory });
+            };
+
+            // New function to delete history entry
+            const handleDeleteHistoryEntry = (index) => {
+                verifyParentAuth(async () => {
+                    if (!user) return;
+                    const newHistory = [...history];
+                    newHistory.splice(index, 1);
+                    const docRef = db.collection('artifacts').doc(appId).collection('public').doc('data').collection('family_project_v1').doc('status');
+                    await docRef.update({ history: newHistory });
+                });
+            };
+
+            const triggerConfetti = () => {
+                setAnimationClass('scale-110'); setTimeout(() => setAnimationClass(''), 200); setShowConfetti(true);
+                if (confettiTimeoutRef.current) clearTimeout(confettiTimeoutRef.current);
+                confettiTimeoutRef.current = setTimeout(() => setShowConfetti(false), 3000);
             };
 
             const handleTaskToggle = async (childId, taskId, taskText) => {
-                if (!user) return;
-                const key = `${getTodayKey()}_${childId}_${taskId}`;
-                const isDone = completedTasks[key];
-                const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'family_project_v1', 'status');
+                if (!user) { alert("מתחבר למערכת... אנא נסה שנית בעוד רגע."); return; }
+                const taskKey = `${getTodayKey()}_${childId}_${taskId}`;
+                const isAlreadyDone = completedTasks[taskKey];
+                const docRef = db.collection('artifacts').doc(appId).collection('public').doc('data').collection('family_project_v1').doc('status');
+                const childName = getChildVisuals(childId).name;
                 
-                if (!isDone) {
-                    triggerConfetti();
-                    playSound('ding');
-                    const newHistoryItem = { id: Date.now().toString(), childId, task: taskText, timestamp: Date.now(), key, points: 1 };
-                    await updateDoc(docRef, { 
-                        points: increment(1), 
-                        [`completedTasks.${key}`]: true,
-                        history: [newHistoryItem, ...historyData]
-                    });
+                // Prepare updates
+                const updates = {};
+                
+                if (isAlreadyDone) {
+                    updates.points = firebase.firestore.FieldValue.increment(-1);
+                    updates[`completedTasks.${taskKey}`] = false;
+                    // Decrease child score
+                    updates[`childScores.${childId}`] = firebase.firestore.FieldValue.increment(-1);
+                    
+                    await docRef.update(updates);
+                    addToHistoryLog(`ביטול: ${taskText || 'משימה'} (${childName})`, -1);
                 } else {
-                    await updateDoc(docRef, { points: increment(-1), [`completedTasks.${key}`]: false });
+                    playSuccessSound(); triggerConfetti();
+                    
+                    updates.points = firebase.firestore.FieldValue.increment(1);
+                    updates[`completedTasks.${taskKey}`] = true;
+                    // Increase child score
+                    updates[`childScores.${childId}`] = firebase.firestore.FieldValue.increment(1);
+                    
+                    await docRef.update(updates);
+                    addToHistoryLog(`משימה: ${taskText || 'משימה'} (${childName})`, 1);
                 }
             };
 
-            const handleDeleteHistoryItem = async (item) => {
+            const handleAddTask = async (childId, newTaskText, taskType, addToAll) => {
                 if (!user) return;
-                const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'family_project_v1', 'status');
-                const updates = {
-                    points: increment(-item.points),
-                    history: historyData.filter(h => h.id !== item.id)
-                };
-                if (item.key) { updates[`completedTasks.${item.key}`] = false; }
-                await updateDoc(docRef, updates);
+                const docRef = db.collection('artifacts').doc(appId).collection('public').doc('data').collection('family_project_v1').doc('status');
+                
+                let updates = {};
+                
+                const childrenToUpdate = addToAll ? CHILDREN_DEFAULTS.map(c => c.id) : [childId];
+                
+                childrenToUpdate.forEach(cid => {
+                    const currentTasks = tasksData[cid] || CHILDREN_DEFAULTS.find(c => c.id === cid).initialTasks;
+                    const newTask = { id: `custom_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`, text: newTaskText, type: taskType, date: getTodayKey(), createdAt: Date.now() };
+                    updates[`childTasks.${cid}`] = [...currentTasks, newTask];
+                });
+
+                await docRef.update(updates);
             };
 
-            const handleSaveFamilySettings = async (s) => {
-                await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'family_project_v1', 'status'), { familySettings: s });
+            const handleEditTask = async (childId, taskId, newText, newType) => {
+                verifyParentAuth(async () => {
+                    if (!user) return;
+                    const docRef = db.collection('artifacts').doc(appId).collection('public').doc('data').collection('family_project_v1').doc('status');
+                    const currentTasks = tasksData[childId] || CHILDREN_DEFAULTS.find(c => c.id === childId).initialTasks;
+                    const updatedTasks = currentTasks.map(t => t.id === taskId ? { ...t, text: newText, type: newType } : t);
+                    await docRef.update({ [`childTasks.${childId}`]: updatedTasks });
+                });
+            };
+
+            const handleMoveTask = async (childId, taskId, direction) => {
+                if (!user) return;
+                const docRef = db.collection('artifacts').doc(appId).collection('public').doc('data').collection('family_project_v1').doc('status');
+                const currentTasks = [...(tasksData[childId] || CHILDREN_DEFAULTS.find(c => c.id === childId).initialTasks)];
+                const index = currentTasks.findIndex(t => t.id === taskId);
+                
+                if (index < 0) return;
+                if (direction === 'up' && index > 0) {
+                    [currentTasks[index], currentTasks[index - 1]] = [currentTasks[index - 1], currentTasks[index]];
+                } else if (direction === 'down' && index < currentTasks.length - 1) {
+                    [currentTasks[index], currentTasks[index + 1]] = [currentTasks[index + 1], currentTasks[index]];
+                }
+                
+                await docRef.update({ [`childTasks.${childId}`]: currentTasks });
+            };
+
+            const handleDeleteTask = async (childId, taskId) => {
+                verifyParentAuth(async () => {
+                    if (!user) return;
+                    const docRef = db.collection('artifacts').doc(appId).collection('public').doc('data').collection('family_project_v1').doc('status');
+                    const currentTasks = tasksData[childId] || CHILDREN_DEFAULTS.find(c => c.id === childId).initialTasks;
+                    const updatedChildTasks = { ...tasksData, [childId]: currentTasks.filter(t => t.id !== taskId) };
+                    await docRef.update({ childTasks: updatedChildTasks });
+                });
+            };
+
+            const handleBonusPoint = async (amount = 1) => {
+                if (!user) return; playSuccessSound(); triggerConfetti();
+                const docRef = db.collection('artifacts').doc(appId).collection('public').doc('data').collection('family_project_v1').doc('status');
+                await docRef.update({ points: firebase.firestore.FieldValue.increment(amount) });
+                addToHistoryLog(`בונוס משפחתי`, amount);
+                setShowBonusModal(false);
+            };
+
+            const handleSaveSettings = async (childId, newSettings) => {
+                if (!user) return;
+                const docRef = db.collection('artifacts').doc(appId).collection('public').doc('data').collection('family_project_v1').doc('status');
+                const updatedChildSettings = { ...childSettings, [childId]: { ...childSettings[childId], ...newSettings } };
+                await docRef.update({ childSettings: updatedChildSettings });
+                setEditingChildId(null);
+            };
+
+            const handleSaveFamilySettings = async (newSettings) => {
+                if (!user) return;
+                const docRef = db.collection('artifacts').doc(appId).collection('public').doc('data').collection('family_project_v1').doc('status');
+                await docRef.update({ familySettings: newSettings });
                 setShowFamilyEditModal(false);
             };
 
-            const progressPercent = Math.min((points / targetPoints) * 100, 100);
-            const fam = (() => {
-                const s = familySettings || {};
-                const theme = THEMES.find(t => t.id === (s.themeId || FAMILY_DEFAULT.defaultThemeId)) || THEMES[0];
-                const Icon = getIcon(s.iconKey || FAMILY_DEFAULT.defaultIconKey);
-                return { ...s, theme, IconComponent: Icon, title: s.title || FAMILY_DEFAULT.defaultTitle, emoji: s.emoji || '🏆' };
-            })();
+            const handleResetPoints = async () => {
+                verifyParentAuth(async () => {
+                    if (!user) return;
+                    const docRef = db.collection('artifacts').doc(appId).collection('public').doc('data').collection('family_project_v1').doc('status');
+                    // Reset family points AND all child scores
+                    await docRef.update({ points: 0, childScores: {} });
+                    addToHistoryLog('איפוס נקודות', -points);
+                    setShowWinModal(false);
+                });
+            };
 
-            const SettingsIcon = getIcon('Settings');
-            const PlusIcon = getIcon('Plus');
-            const SparklesIcon = getIcon('Sparkles');
-            const TrophyIcon = getIcon('Trophy');
-            const RotateCcwIcon = getIcon('RotateCcw');
-            const XIcon = getIcon('X');
-            const CheckIcon = getIcon('Check');
-            const TrashIcon = getIcon('Trash2');
-            const StarIcon = getIcon('Star');
-            const CalendarIcon = getIcon('Calendar');
-            const RepeatIcon = getIcon('Repeat');
-            const CalendarDaysIcon = getIcon('CalendarDays');
-            const TypeIcon = getIcon('Type');
-            const PaletteIcon = getIcon('Palette');
-            const SmileIcon = getIcon('Smile');
-            const CameraIcon = getIcon('Camera');
-            const ImageIconIcon = getIcon('Image');
-            const MinusIcon = getIcon('Minus');
-            const TargetIcon = getIcon('Target');
-            const LockIcon = getIcon('Lock');
-            const HistoryIcon = getIcon('History');
+            const createLongPressHandlers = (callback, onClick) => ({
+                onMouseDown: () => { isLongPress.current = false; longPressTimer.current = setTimeout(() => { isLongPress.current = true; verifyParentAuth(callback); }, 800); },
+                onMouseUp: (e) => { if (longPressTimer.current) clearTimeout(longPressTimer.current); if (!isLongPress.current && onClick) onClick(e); },
+                onMouseLeave: () => { if (longPressTimer.current) clearTimeout(longPressTimer.current); },
+                onTouchStart: () => { isLongPress.current = false; longPressTimer.current = setTimeout(() => { isLongPress.current = true; verifyParentAuth(callback); }, 800); },
+                onTouchEnd: (e) => { if (longPressTimer.current) clearTimeout(longPressTimer.current); if (isLongPress.current) e.preventDefault(); if (!isLongPress.current && onClick) onClick(e); }
+            });
+
+            const progressPercent = Math.min((points / targetPoints) * 100, 100);
+            const familyVisuals = getFamilyVisuals();
 
             return (
                 <div className="min-h-screen bg-slate-50 font-sans text-slate-800" dir="rtl">
                     {(showConfetti || showWinModal) && <Confetti density={showWinModal ? 400 : 150} />}
-
                     <header className="bg-white shadow-lg p-6 sticky top-0 z-10">
                         <div className="max-w-6xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
-                            <div className="flex items-center gap-3 select-none">
-                                <div className={`p-3 rounded-full cursor-pointer transition-transform active:scale-95 ${fam.theme.classes.split(' ')[0]} ${fam.theme.classes.split(' ')[2].replace('border', 'border-2')}`} 
-                                     {...createLongPressHandlers(() => requestPin(() => setShowFamilyEditModal(true)))}>
-                                    <div className="w-8 h-8 flex items-center justify-center overflow-hidden rounded-full">
-                                        {fam.useImage && fam.image ? <img src={fam.image} className="w-full h-full object-cover"/> : fam.useEmoji ? <span className="text-2xl leading-none">{fam.emoji}</span> : <fam.IconComponent className={`w-8 h-8 ${fam.theme.iconText}`} />}
+                            <div className="flex items-center gap-3 select-none w-full md:w-auto justify-between md:justify-start">
+                                <div className="flex items-center gap-3">
+                                    <div className={`p-3 rounded-full cursor-pointer transition-transform active:scale-95 ${familyVisuals.theme.classes.split(' ')[0]} ${familyVisuals.theme.classes.split(' ')[2].replace('border', 'border-2')}`} {...createLongPressHandlers(() => setShowFamilyEditModal(true))}>
+                                        <div className="w-8 h-8 flex items-center justify-center overflow-hidden rounded-full">{familyVisuals.useImage && familyVisuals.image ? <img src={familyVisuals.image} alt="Family" className="w-full h-full object-cover" /> : familyVisuals.useEmoji ? <span className="text-2xl leading-none">{familyVisuals.emoji}</span> : <familyVisuals.IconComponent className={`w-8 h-8 ${familyVisuals.theme.iconText}`} />}</div>
                                     </div>
+                                    <div><h1 className="text-2xl font-bold text-slate-800 cursor-pointer hover:text-blue-600 transition-colors" {...createLongPressHandlers(() => setShowFamilyEditModal(true))} title="לחיצה ארוכה לעריכה">{familyVisuals.title}</h1><div className="text-slate-500 text-sm flex gap-2"><span>{currentDate}</span>{hebrewDate && <span className="border-r border-slate-300 pr-2">{hebrewDate}</span>}</div></div>
                                 </div>
-                                <div>
-                                    <h1 className="text-2xl font-bold text-slate-800 cursor-pointer" {...createLongPressHandlers(() => requestPin(() => setShowFamilyEditModal(true)))}>{fam.title}</h1>
-                                    <div className="text-slate-500 text-sm flex gap-2"><span>{currentDate}</span>{hebrewDate && <span className="border-r border-slate-300 pr-2">{hebrewDate}</span>}</div>
-                                </div>
+                                <button onClick={() => setShowHistoryModal(true)} className="p-2 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 transition-colors md:mr-4"><Icons.History className="w-6 h-6" /></button>
                             </div>
-                            <div className="flex-1 w-full md:w-auto md:mx-8 cursor-pointer group" onClick={() => setShowHistoryModal(true)}>
-                                <div className="flex justify-between mb-2 text-lg font-bold">
-                                    <span className={`transition-transform duration-300 ${animationClass} text-blue-600 flex items-center gap-2`}>
-                                        {points} נקודות
-                                        <HistoryIcon className="w-4 h-4 text-slate-300 group-hover:text-blue-400 transition-colors" />
-                                    </span>
-                                    <span className="text-slate-400">יעד: {targetPoints}</span>
-                                </div>
-                                <div className="h-6 w-full bg-slate-200 rounded-full overflow-hidden shadow-inner">
-                                    <div className="h-full bg-gradient-to-r from-blue-500 to-purple-500 transition-all duration-700 ease-out flex items-center justify-center relative" style={{ width: `${progressPercent}%` }}>
-                                        {progressPercent > 10 && <div className="absolute left-0 top-0 bottom-0 w-full animate-[shimmer_2s_infinite] bg-gradient-to-r from-transparent via-white/20 to-transparent -skew-x-12"></div>}
-                                    </div>
-                                </div>
+                            <div className="flex-1 w-full md:w-auto md:mx-8">
+                                <div className="flex justify-between mb-2 text-lg font-bold"><span className={`transition-transform duration-300 ${animationClass} text-blue-600`}>{points} נקודות</span><span className="text-slate-400">יעד: {targetPoints}</span></div>
+                                <div className="h-6 w-full bg-slate-200 rounded-full overflow-hidden shadow-inner"><div className="h-full bg-gradient-to-r from-blue-500 to-purple-500 transition-all duration-700 ease-out flex items-center justify-center relative" style={{ width: `${progressPercent}%` }}>{progressPercent > 10 && (<div className="absolute left-0 top-0 bottom-0 w-full animate-[shimmer_2s_infinite] bg-gradient-to-r from-transparent via-white/20 to-transparent -skew-x-12"></div>)}</div></div>
                             </div>
-                            <button onClick={() => setShowBonusModal(true)} className="flex items-center gap-2 bg-gradient-to-r from-orange-400 to-red-500 text-white px-6 py-3 rounded-xl font-bold shadow-md hover:shadow-lg transform active:scale-95 transition-all"><SparklesIcon className="w-5 h-5" /><span>בונוס</span></button>
+                            <button onClick={() => verifyParentAuth(() => setShowBonusModal(true))} className="flex items-center gap-2 bg-gradient-to-r from-orange-400 to-red-500 text-white px-6 py-3 rounded-xl font-bold shadow-md hover:shadow-lg transform active:scale-95 transition-all w-full md:w-auto justify-center"><Icons.Sparkles className="w-5 h-5" /><span>בונוס</span></button>
                         </div>
                     </header>
+                    <main className="max-w-6xl mx-auto p-6"><div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-6 mt-4">
+                        {CHILDREN_DEFAULTS.map((child) => {
+                            const { theme, IconComponent, useEmoji, emoji, useImage, image, name } = getChildVisuals(child.id);
+                            const currentTasks = getChildTasks(child.id);
+                            // Get score from state, default to 0
+                            const currentScore = childScores[child.id] || 0;
 
-                    <main className="max-w-6xl mx-auto p-6">
-                        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-6 mt-4">
-                            {CHILDREN_DEFAULTS.map((child) => {
-                                const v = getChildVisuals(child.id);
-                                const tasks = getChildTasks(child.id);
-                                return (
-                                    <div key={child.id} className={`group relative bg-white rounded-3xl p-6 border-4 ${v.theme.classes.split(' ')[2]} shadow-md hover:shadow-xl hover:-translate-y-2 transition-all duration-300 flex flex-col items-center justify-center gap-4 h-64 select-none`}
-                                        {...createLongPressHandlers(() => requestPin(() => setEditingChildId(child.id)), () => setSelectedChild(child))}>
-                                        <button onClick={(e) => { e.stopPropagation(); requestPin(() => setEditingChildId(child.id)); }} className="absolute top-2 right-2 p-2 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-400 opacity-0 group-hover:opacity-100 transition-opacity"><SettingsIcon className="w-4 h-4" /></button>
-                                        <div className={`w-24 h-24 rounded-full ${v.theme.iconBg} flex items-center justify-center shadow-inner group-hover:scale-110 transition-transform overflow-hidden`}>
-                                            {v.useImage && v.image ? <img src={v.image} className="w-full h-full object-cover"/> : v.useEmoji ? <span className="text-5xl leading-none">{v.emoji}</span> : <v.IconComponent className={`w-10 h-10 ${v.theme.iconText}`} />}
-                                        </div>
-                                        <h2 className="text-2xl font-bold text-center mt-4">{v.name}</h2>
-                                        <div className="flex gap-1 mt-2">{tasks.map(t => <div key={t.id} className={`w-3 h-3 rounded-full ${completedTasks[`${getTodayKey()}_${child.id}_${t.id}`] ? 'bg-green-500' : 'bg-slate-200'}`} />)}</div>
-                                        <div className="absolute top-4 left-4 bg-slate-100 rounded-full p-1 opacity-0 group-hover:opacity-100 pointer-events-none"><PlusIcon className="w-5 h-5 text-slate-400" /></div>
+                            return (
+                                <div key={child.id} className={`group relative bg-white rounded-3xl p-6 border-4 ${theme.classes.split(' ')[2]} shadow-md hover:shadow-xl hover:-translate-y-2 transition-all duration-300 flex flex-col items-center justify-center gap-4 h-64 select-none`} {...createLongPressHandlers(() => setEditingChildId(child.id), () => setSelectedChild(child))}>
+                                    <button onClick={(e) => { e.stopPropagation(); verifyParentAuth(() => setEditingChildId(child.id)); }} className="absolute top-2 right-2 p-2 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-400 hover:text-slate-600 transition-colors opacity-0 group-hover:opacity-100 z-10" title="עריכת עיצוב"><Icons.Settings className="w-4 h-4" /></button>
+                                    
+                                    {/* Personal Score Badge */}
+                                    <div className="absolute top-0 left-0 -mt-3 -ml-3 bg-gradient-to-br from-yellow-400 to-orange-500 text-white w-10 h-10 flex items-center justify-center rounded-full shadow-lg font-bold border-2 border-white z-20">
+                                        {currentScore}
                                     </div>
-                                );
-                            })}
-                        </div>
-                    </main>
 
-                    {selectedChild && <TaskModal child={selectedChild} tasks={getChildTasks(selectedChild.id)} completedTasks={completedTasks} visuals={getChildVisuals(selectedChild.id)} onToggleTask={handleTaskToggle} onClose={() => setSelectedChild(null)} onAddTask={(cid, txt, type) => {
-                        const newT = { id: `custom_${Date.now()}`, text: txt, type, date: getTodayKey() };
-                        updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'family_project_v1', 'status'), { childTasks: { ...tasksData, [cid]: [...getChildTasks(cid), newT] } });
-                    }} onDeleteTask={(cid, tid) => {
-                        requestPin(() => updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'family_project_v1', 'status'), { childTasks: { ...tasksData, [cid]: getChildTasks(cid).filter(t => t.id !== tid) } }));
-                    }} getTodayKey={getTodayKey} icons={{XIcon, CheckIcon, TrashIcon, CalendarIcon, RepeatIcon, CalendarDaysIcon, StarIcon, PlusIcon}} />}
+                                    <div className="flex flex-col items-center justify-center w-full h-full cursor-pointer">
+                                        <div className={`w-24 h-24 rounded-full ${theme.iconBg} flex items-center justify-center shadow-inner group-hover:scale-110 transition-transform overflow-hidden relative`}>{useImage && image ? <img src={image} alt={name} className="w-full h-full object-cover" /> : useEmoji ? <span className="text-5xl leading-none select-none">{emoji}</span> : <IconComponent className={`w-10 h-10 ${theme.iconText}`} />}</div>
+                                        <h2 className="text-2xl font-bold text-center mt-4" title="לחיצה ארוכה לעריכת שם">{name}</h2>
+                                        <div className="flex gap-1 mt-2">{currentTasks.map((task) => { const isDone = completedTasks[`${getTodayKey()}_${child.id}_${task.id}`]; return (<div key={task.id} className={`w-3 h-3 rounded-full ${isDone ? 'bg-green-500' : 'bg-slate-200'}`} />); })}</div>
+                                    </div>
+                                    <div className="absolute top-4 left-4 bg-slate-100 rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none"><Icons.Plus className="w-5 h-5 text-slate-400" /></div>
+                                </div>
+                            );
+                        })}
+                    </div></main>
+                    {selectedChild && <TaskModal child={selectedChild} tasks={getChildTasks(selectedChild.id)} completedTasks={completedTasks} visuals={getChildVisuals(selectedChild.id)} onToggleTask={handleTaskToggle} onClose={() => setSelectedChild(null)} onAddTask={handleAddTask} onDeleteTask={handleDeleteTask} onEditTask={handleEditTask} onMoveTask={handleMoveTask} getTodayKey={getTodayKey} />}
+                    {editingChildId && <EditChildModal childId={editingChildId} initialSettings={getChildVisuals(editingChildId)} currentSettings={childSettings[editingChildId] || {}} onClose={() => setEditingChildId(null)} onSave={handleSaveSettings} childName={CHILDREN_DEFAULTS.find(c => c.id === editingChildId)?.name} />}
+                    {showFamilyEditModal && <EditFamilyModal initialSettings={getFamilyVisuals()} currentSettings={familySettings} onClose={() => setShowFamilyEditModal(false)} onSave={handleSaveFamilySettings} />}
+                    {showBonusModal && <BonusModal onClose={() => setShowBonusModal(false)} onConfirm={handleBonusPoint} />}
+                    {showWinModal && (<div className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-black/60 backdrop-blur-md animate-fade-in"><div className="bg-white w-full max-w-lg rounded-[2.5rem] shadow-2xl p-8 text-center animate-scale-up border-8 border-yellow-300 relative overflow-hidden"><div className="absolute top-0 left-0 w-full h-32 bg-yellow-100 rounded-b-[50%] -translate-y-16"></div><div className="relative z-10"><div className="mx-auto w-32 h-32 bg-gradient-to-b from-yellow-300 to-yellow-500 rounded-full flex items-center justify-center mb-6 shadow-xl border-4 border-white animate-bounce"><Icons.Trophy className="w-16 h-16 text-white drop-shadow-md" /></div><h2 className="text-5xl font-black text-slate-800 mb-2 tracking-tight">כל הכבוד!</h2><h3 className="text-2xl font-bold text-slate-600 mb-6">הגעתם ליעד של {targetPoints} נקודות!</h3><div className="p-4 bg-yellow-50 rounded-2xl mb-8 border-2 border-yellow-200"><p className="text-yellow-800 text-lg">"יגעת ומצאת תאמין!"</p><p className="text-yellow-700 font-bold mt-1">המשיכו כך!</p></div><button onClick={handleResetPoints} className="w-full py-4 rounded-2xl bg-gradient-to-r from-blue-500 to-blue-600 text-white font-bold text-xl shadow-xl hover:shadow-2xl hover:scale-[1.02] transition-all flex items-center justify-center gap-2 group"><Icons.RotateCcw className="w-6 h-6 group-hover:rotate-180 transition-transform duration-500" />אפס נקודות והתחל מחדש</button></div></div></div>)}
                     
-                    {editingChildId && <EditChildModal childId={editingChildId} initialSettings={getChildVisuals(editingChildId)} currentSettings={childSettings[editingChildId] || {}} onClose={() => setEditingChildId(null)} onSave={async (cid, s) => {
-                        await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'family_project_v1', 'status'), { childSettings: { ...childSettings, [cid]: { ...childSettings[cid], ...s } } });
-                        setEditingChildId(null);
-                    }} icons={{XIcon, TypeIcon, PaletteIcon, CheckIcon, SmileIcon, CameraIcon, ImageIconIcon}} getIcon={getIcon} />}
-
-                    {showFamilyEditModal && <EditFamilyModal initialSettings={fam} currentSettings={familySettings} onClose={() => setShowFamilyEditModal(false)} onSave={handleSaveFamilySettings} icons={{XIcon, TypeIcon, TargetIcon, PaletteIcon, CheckIcon, SmileIcon, CameraIcon, ImageIconIcon}} getIcon={getIcon} />}
-
-                    {showBonusModal && <BonusModal onClose={() => setShowBonusModal(false)} onConfirm={async (amt) => { 
-                        triggerConfetti(); playSound('ding');
-                        const newHistoryItem = { id: Date.now().toString(), childId: 'family', task: 'בונוס משפחתי', timestamp: Date.now(), points: amt };
-                        await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'family_project_v1', 'status'), { 
-                            points: increment(amt), history: [newHistoryItem, ...historyData]
-                        }); 
-                        setShowBonusModal(false); 
-                    }} icons={{SparklesIcon, MinusIcon, PlusIcon}} />}
-
-                    {showHistoryModal && (
-                        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-fade-in">
-                            <div className="bg-white w-full max-w-lg rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[80vh]">
-                                <div className="p-6 border-b border-slate-100 flex justify-between items-center bg-slate-50">
-                                    <h3 className="text-xl font-bold text-slate-800 flex items-center gap-2"><HistoryIcon className="w-5 h-5"/> היסטוריית נקודות</h3>
-                                    <button onClick={() => setShowHistoryModal(false)} className="p-2 hover:bg-slate-200 rounded-full"><XIcon className="w-5 h-5" /></button>
-                                </div>
-                                <div className="p-4 overflow-y-auto flex-1 bg-slate-50 space-y-3">
-                                    {historyData.length === 0 ? <p className="text-center text-slate-400 mt-10">אין היסטוריה עדיין...</p> : 
-                                    historyData.map(item => {
-                                        const v = item.childId === 'family' ? fam : getChildVisuals(item.childId);
-                                        return (
-                                            <div key={item.id} className="bg-white p-4 rounded-xl border border-slate-100 flex items-center justify-between shadow-sm">
-                                                <div className="flex items-center gap-3">
-                                                    <div className={`w-10 h-10 rounded-full flex items-center justify-center ${v.theme.iconBg} text-lg`}>
-                                                        {v.useImage ? <img src={v.image} className="w-full h-full object-cover rounded-full"/> : v.useEmoji ? v.emoji : <v.IconComponent className={`w-5 h-5 ${v.theme.iconText}`}/>}
-                                                    </div>
-                                                    <div>
-                                                        <p className="font-bold text-slate-800">{v.name || v.title}</p>
-                                                        <p className="text-sm text-slate-500">{item.task}</p>
-                                                    </div>
-                                                </div>
-                                                <div className="flex items-center gap-3">
-                                                    <span className="font-bold text-green-600">+{item.points}</span>
-                                                    <button onClick={() => requestPin(() => handleDeleteHistoryItem(item))} className="p-2 bg-red-50 text-red-500 rounded-full hover:bg-red-100"><TrashIcon className="w-4 h-4" /></button>
-                                                </div>
-                                            </div>
-                                        );
-                                    })}
-                                </div>
-                            </div>
+                    {/* History Modal with Delete Option */}
+                    {showHistoryModal && (<div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm animate-fade-in"><div className="bg-white w-full max-w-md rounded-3xl shadow-2xl flex flex-col max-h-[80vh]"><div className="p-5 border-b border-slate-100 flex justify-between items-center bg-slate-50"><h3 className="text-xl font-bold text-slate-800 flex items-center gap-2"><Icons.History className="w-5 h-5 text-blue-500"/>היסטוריית נקודות</h3><button onClick={() => setShowHistoryModal(false)} className="p-2 hover:bg-slate-200 rounded-full"><Icons.X className="w-5 h-5" /></button></div><div className="overflow-y-auto p-4 flex-1 space-y-3">{history.length === 0 ? (<p className="text-center text-slate-400 py-10">אין עדיין היסטוריה</p>) : (history.map((item, i) => (<div key={i} className="flex justify-between items-center p-3 bg-slate-50 rounded-xl border border-slate-100">
+                        <div className="flex-1">
+                            <p className="font-bold text-slate-700">{item.text}</p>
+                            <p className="text-xs text-slate-400">{new Date(item.timestamp).toLocaleTimeString('he-IL', {hour: '2-digit', minute:'2-digit'})} • {new Date(item.timestamp).toLocaleDateString('he-IL')}</p>
                         </div>
-                    )}
-
-                    {showPinModal && (
-                        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in">
-                            <div className="bg-white w-full max-w-sm rounded-3xl shadow-2xl p-8 text-center">
-                                <div className="mx-auto w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mb-4"><LockIcon className="w-8 h-8 text-slate-500" /></div>
-                                <h3 className="text-2xl font-bold text-slate-800 mb-6">בדיקת הורים</h3>
-                                <div className="grid grid-cols-3 gap-4 mb-6" dir="ltr">
-                                    {[1,2,3,4,5,6,7,8,9].map(n => <button key={n} onClick={() => { 
-                                        const input = document.getElementById('pin-input'); 
-                                        input.value += n; 
-                                        if (input.value === PARENT_PIN) { setShowPinModal(false); pinCallback.current(); input.value = ''; }
-                                        if (input.value.length >= 4 && input.value !== PARENT_PIN) { input.classList.add('animate-pulse', 'bg-red-100'); setTimeout(()=> { input.value=''; input.classList.remove('animate-pulse', 'bg-red-100'); }, 300); }
-                                    }} className="aspect-square rounded-2xl bg-slate-50 text-2xl font-bold text-slate-700 hover:bg-slate-200 active:scale-95 transition-all tap-highlight-transparent">{n}</button>)}
-                                    <div className="aspect-square"></div>
-                                    <button onClick={() => {
-                                        const input = document.getElementById('pin-input');
-                                        input.value += 0;
-                                        if (input.value === PARENT_PIN) { setShowPinModal(false); pinCallback.current(); input.value = ''; }
-                                    }} className="aspect-square rounded-2xl bg-slate-50 text-2xl font-bold text-slate-700 hover:bg-slate-200 active:scale-95 transition-all tap-highlight-transparent">0</button>
-                                </div>
-                                <input id="pin-input" type="password" className="w-full text-center text-3xl tracking-widest font-bold border-b-2 border-slate-200 outline-none pb-2 bg-transparent" readOnly />
-                                <button onClick={() => setShowPinModal(false)} className="mt-6 text-slate-400 font-bold hover:text-slate-600">ביטול</button>
-                            </div>
+                        <div className="flex items-center gap-3">
+                            <span className={`font-bold dir-ltr ${item.diff > 0 ? 'text-green-600' : 'text-red-500'}`}>{item.diff > 0 ? '+' : ''}{item.diff}</span>
+                            <button onClick={() => handleDeleteHistoryEntry(i)} className="p-1.5 bg-red-50 text-red-400 rounded-lg hover:bg-red-100 hover:text-red-600 transition-colors"><Icons.Trash2 className="w-4 h-4" /></button>
                         </div>
-                    )}
-
-                    {showWinModal && (
-                        <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-black/60 backdrop-blur-md animate-fade-in">
-                            <div className="bg-white w-full max-w-lg rounded-[2.5rem] shadow-2xl p-8 text-center animate-scale-up border-8 border-yellow-300 relative overflow-hidden">
-                                <div className="absolute top-0 left-0 w-full h-32 bg-yellow-100 rounded-b-[50%] -translate-y-16"></div>
-                                <div className="relative z-10">
-                                    <div className="mx-auto w-32 h-32 bg-gradient-to-b from-yellow-300 to-yellow-500 rounded-full flex items-center justify-center mb-6 shadow-xl border-4 border-white animate-bounce"><TrophyIcon className="w-16 h-16 text-white drop-shadow-md" /></div>
-                                    <h2 className="text-5xl font-black text-slate-800 mb-2">כל הכבוד!</h2>
-                                    <h3 className="text-2xl font-bold text-slate-600 mb-6">הגעתם ליעד של {targetPoints} נקודות!</h3>
-                                    <button onClick={() => requestPin(async () => { await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'family_project_v1', 'status'), { points: 0, history: [] }); setShowWinModal(false); })} className="w-full py-4 rounded-2xl bg-gradient-to-r from-blue-500 to-blue-600 text-white font-bold text-xl shadow-xl flex items-center justify-center gap-2"><RotateCcwIcon className="w-6 h-6"/>אפס נקודות והתחל מחדש</button>
-                                </div>
-                            </div>
-                        </div>
-                    )}
-                    <style>{`@keyframes shimmer { 0% { transform: translateX(-150%); } 50% { transform: translateX(150%); } 100% { transform: translateX(150%); } } @keyframes fade-in { from { opacity: 0; } to { opacity: 1; } } @keyframes slide-up { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } } @keyframes scale-up { from { opacity: 0; transform: scale(0.9); } to { opacity: 1; transform: scale(1); } } .animate-fade-in { animation: fade-in 0.2s ease-out; } .animate-slide-up { animation: slide-up 0.3s cubic-bezier(0.16, 1, 0.3, 1); } .animate-scale-up { animation: scale-up 0.2s cubic-bezier(0.16, 1, 0.3, 1); }`}</style>
+                    </div>)))}</div></div></div>)}
+                    
+                    {showPinModal && <PinModal onClose={() => setShowPinModal(false)} onSuccess={handlePinSuccess} correctPin={parentPin} />}
                 </div>
             );
-        }
+        };
 
-        // --- SUB COMPONENTS ---
-        function BonusModal({ onClose, onConfirm, icons }) {
-            const [amount, setAmount] = useState(1);
-            const { SparklesIcon, MinusIcon, PlusIcon } = icons;
-            return (
-                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm animate-fade-in">
-                    <div className="bg-white w-full max-w-md rounded-3xl shadow-2xl p-6 text-center animate-scale-up">
-                        <div className="mx-auto w-16 h-16 bg-gradient-to-br from-orange-400 to-red-500 rounded-full flex items-center justify-center mb-4 shadow-lg"><SparklesIcon className="w-8 h-8 text-white" /></div>
-                        <h3 className="text-2xl font-bold text-slate-800 mb-2">הוספת בונוס</h3>
-                        <div className="flex items-center justify-center gap-4 mb-8">
-                            <button onClick={() => setAmount(Math.max(1, amount - 1))} className="w-12 h-12 rounded-full bg-slate-100 flex items-center justify-center"><MinusIcon className="w-6 h-6" /></button>
-                            <div className="text-6xl font-black text-transparent bg-clip-text bg-gradient-to-r from-orange-500 to-red-600 w-24 tabular-nums">{amount}</div>
-                            <button onClick={() => setAmount(Math.min(10, amount + 1))} className="w-12 h-12 rounded-full bg-slate-100 flex items-center justify-center"><PlusIcon className="w-6 h-6" /></button>
-                        </div>
-                        <div className="flex gap-4 justify-center"><button onClick={onClose} className="px-6 py-3 rounded-xl border-2 border-slate-200">ביטול</button><button onClick={() => onConfirm(amount)} className="px-8 py-3 rounded-xl bg-gradient-to-r from-orange-400 to-red-500 text-white font-bold">הוסף!</button></div>
-                    </div>
-                </div>
-            );
-        }
-
-        function TaskModal({ child, tasks, completedTasks, visuals, onToggleTask, onClose, onAddTask, onDeleteTask, getTodayKey, icons }) {
-            const { theme, IconComponent, useEmoji, emoji, useImage, image, name } = visuals;
-            const { XIcon, CheckIcon, TrashIcon, CalendarIcon, RepeatIcon, CalendarDaysIcon, StarIcon, PlusIcon } = icons;
-            const [isAdding, setIsAdding] = useState(false);
-            const [newTaskText, setNewTaskText] = useState("");
-            const [newTaskType, setNewTaskType] = useState("daily");
-            return (
-                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm animate-fade-in">
-                    <div className="bg-white w-full max-w-lg rounded-3xl shadow-2xl overflow-hidden animate-slide-up flex flex-col max-h-[90vh]" onClick={(e) => e.stopPropagation()}>
-                        <div className={`${theme.iconBg} p-6 flex items-center justify-between flex-shrink-0`}>
-                            <div className="flex items-center gap-4">
-                                <div className="bg-white/50 p-1 rounded-full flex items-center justify-center w-16 h-16 overflow-hidden border-2 border-white/50">{useImage && image ? <img src={image} className="w-full h-full object-cover rounded-full" /> : useEmoji ? <span className="text-3xl">{emoji}</span> : <IconComponent className={`w-8 h-8 ${theme.iconText}`} />}</div>
-                                <div><h2 className="text-3xl font-bold text-slate-800">{name}</h2><p className="text-slate-600 text-lg">המשימות להיום</p></div>
-                            </div>
-                            <button onClick={onClose} className="bg-white/50 p-2 rounded-full"><XIcon className="w-6 h-6 text-slate-700" /></button>
-                        </div>
-                        <div className="p-8 space-y-4 overflow-y-auto flex-1">
-                            {tasks.map((task) => {
-                                const isDone = completedTasks[`${getTodayKey()}_${child.id}_${task.id}`];
-                                return (
-                                    <div key={task.id} className="relative group">
-                                        <button onClick={() => onToggleTask(child.id, task.id, task.text)} className={`w-full flex items-center justify-between p-5 rounded-2xl border-2 transition-all duration-200 ${isDone ? 'bg-green-50 border-green-200 shadow-none' : 'bg-white border-slate-100 shadow-md'}`}>
-                                            <div className="flex items-center gap-3">{task.type==='one-time'?<CalendarIcon className="w-4 h-4 text-blue-400"/>:task.type==='daily'?<RepeatIcon className="w-4 h-4 text-purple-400"/>:<CalendarDaysIcon className="w-4 h-4 text-pink-400"/>}<span className={`text-xl font-medium ${isDone ? 'text-green-800 line-through opacity-70' : 'text-slate-700'}`}>{task.text}</span></div>
-                                            <div className={`w-10 h-10 rounded-full flex items-center justify-center border-2 transition-all ${isDone ? 'bg-green-500 border-green-500 scale-110' : 'bg-white border-slate-300'}`}>{isDone && <CheckIcon className="w-6 h-6 text-white" />}</div>
-                                        </button>
-                                        <button onClick={(e) => { e.stopPropagation(); onDeleteTask(child.id, task.id); }} className="absolute -left-2 top-1/2 -translate-y-1/2 -translate-x-full p-2 bg-red-100 text-red-500 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"><TrashIcon className="w-5 h-5" /></button>
-                                    </div>
-                                );
-                            })}
-                            {tasks.length > 0 && tasks.every((t) => completedTasks[`${getTodayKey()}_${child.id}_${t.id}`]) && <div className="mt-6 text-center bg-yellow-50 p-4 rounded-xl border border-yellow-200 text-yellow-800 animate-pulse"><StarIcon className="w-8 h-8 mx-auto mb-2 text-yellow-500 fill-yellow-500" /><p className="font-bold text-lg">כל הכבוד! סיימת את כל המשימות להיום!</p></div>}
-                        </div>
-                        <div className="p-4 border-t border-slate-100 bg-slate-50">
-                            {!isAdding ? <button onClick={() => setIsAdding(true)} className="w-full py-3 rounded-xl border-2 border-dashed border-slate-300 text-slate-500 font-bold hover:bg-white flex items-center justify-center gap-2"><PlusIcon className="w-5 h-5" />הוסף משימה חדשה</button> : 
-                            <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm animate-fade-in">
-                                <input type="text" placeholder="שם המשימה..." value={newTaskText} onChange={(e) => setNewTaskText(e.target.value)} className="w-full p-3 rounded-lg border border-slate-300 mb-3" autoFocus />
-                                <div className="flex gap-2 mb-3">
-                                    <button onClick={() => setNewTaskType('daily')} className={`flex-1 py-2 rounded-lg text-sm font-bold border ${newTaskType==='daily'?'bg-purple-100 text-purple-700 border-purple-300':'bg-slate-50 border-slate-200'}`}>כל יום</button>
-                                    <button onClick={() => setNewTaskType('friday')} className={`flex-1 py-2 rounded-lg text-sm font-bold border ${newTaskType==='friday'?'bg-pink-100 text-pink-700 border-pink-300':'bg-slate-50 border-slate-200'}`}>יום שישי</button>
-                                    <button onClick={() => setNewTaskType('one-time')} className={`flex-1 py-2 rounded-lg text-sm font-bold border ${newTaskType==='one-time'?'bg-blue-100 text-blue-700 border-blue-300':'bg-slate-50 border-slate-200'}`}>רק להיום</button>
-                                </div>
-                                <div className="flex gap-2"><button onClick={() => setIsAdding(false)} className="flex-1 py-2 text-slate-500 font-bold hover:bg-slate-100 rounded-lg">ביטול</button><button onClick={() => { if(!newTaskText.trim())return; onAddTask(child.id, newTaskText, newTaskType); setNewTaskText(""); setIsAdding(false); }} className="flex-1 py-2 bg-blue-600 text-white font-bold rounded-lg hover:bg-blue-700 shadow-md">שמור</button></div>
-                            </div>}
-                        </div>
-                    </div>
-                </div>
-            );
-        }
-
-        function EditChildModal({ childId, initialSettings, currentSettings, onClose, onSave, icons, getIcon }) {
-            const { XIcon, TypeIcon, PaletteIcon, CheckIcon, SmileIcon, CameraIcon, ImageIconIcon } = icons;
-            const [activeTab, setActiveTab] = useState(currentSettings.useImage ? 'image' : currentSettings.useEmoji ? 'emoji' : 'icon');
-            const [selectedThemeId, setSelectedThemeId] = useState(currentSettings.themeId || initialSettings.theme.id);
-            const [selectedIconKey, setSelectedIconKey] = useState(currentSettings.iconKey || 'smile');
-            const [customEmoji, setCustomEmoji] = useState(currentSettings.emoji || '😊');
-            const [customImage, setCustomImage] = useState(currentSettings.image || null);
-            const [customName, setCustomName] = useState(currentSettings.name || initialSettings.name);
-            const [isProcessing, setIsProcessing] = useState(false);
-            const ICON_KEYS = ['trophy', 'utensils', 'shirt', 'gamepad', 'home', 'star', 'heart', 'smile', 'sun', 'moon', 'music', 'book', 'bike', 'car', 'cat', 'dog', 'flower', 'camera', 'sparkles'];
-
-            return (
-                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-fade-in">
-                    <div className="bg-white w-full max-w-lg rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
-                        <div className="p-6 border-b border-slate-100 flex justify-between items-center bg-slate-50"><h3 className="text-xl font-bold text-slate-800">עריכת פרטי ילד</h3><button onClick={onClose} className="p-2 hover:bg-slate-200 rounded-full"><XIcon className="w-5 h-5" /></button></div>
-                        <div className="p-6 overflow-y-auto flex-1">
-                            <div className="mb-6"><h4 className="flex items-center gap-2 font-bold text-slate-700 mb-3"><TypeIcon className="w-5 h-5 text-slate-500" />שם הילד</h4><input type="text" value={customName} onChange={(e) => setCustomName(e.target.value)} className="w-full p-3 rounded-xl border border-slate-300 text-lg" /></div>
-                            <div className="mb-8"><h4 className="flex items-center gap-2 font-bold text-slate-700 mb-3"><PaletteIcon className="w-5 h-5 text-purple-500" />בחר צבע</h4><div className="flex flex-wrap gap-3">{THEMES.map(t => <button key={t.id} onClick={() => setSelectedThemeId(t.id)} className={`w-10 h-10 rounded-full border-2 flex items-center justify-center ${t.classes.split(' ')[0]} ${selectedThemeId === t.id ? 'border-slate-800 scale-110 shadow-md ring-2' : 'border-transparent'}`}>{selectedThemeId === t.id && <CheckIcon className={`w-5 h-5 ${t.classes.split(' ')[1]}`} />}</button>)}</div></div>
-                            <div>
-                                <h4 className="flex items-center gap-2 font-bold text-slate-700 mb-3"><SmileIcon className="w-5 h-5 text-orange-500" />סמל / תמונה</h4>
-                                <div className="flex bg-slate-100 p-1 rounded-xl mb-4"><button onClick={() => setActiveTab('icon')} className={`flex-1 py-2 rounded-lg font-medium ${activeTab==='icon'?'bg-white shadow':''}`}>סמלים</button><button onClick={() => setActiveTab('emoji')} className={`flex-1 py-2 rounded-lg font-medium ${activeTab==='emoji'?'bg-white shadow':''}`}>אימוג'י</button><button onClick={() => setActiveTab('image')} className={`flex-1 py-2 rounded-lg font-medium ${activeTab==='image'?'bg-white shadow':''}`}>תמונה</button></div>
-                                {activeTab === 'icon' && <div className="grid grid-cols-5 gap-3">{ICON_KEYS.map((k) => { const I = getIcon(k); return <button key={k} onClick={() => setSelectedIconKey(k)} className={`aspect-square rounded-xl flex items-center justify-center border-2 ${selectedIconKey === k ? 'bg-blue-50 border-blue-500 text-blue-600' : 'bg-white border-slate-200'}`}><I className="w-6 h-6" /></button>; })}</div>}
-                                {activeTab === 'emoji' && <div className="flex flex-col items-center p-4 bg-slate-50 rounded-xl border border-slate-200"><input type="text" value={customEmoji} onChange={(e) => setCustomEmoji(e.target.value)} className="w-24 h-24 text-center text-6xl rounded-2xl border-2 border-slate-300" maxLength={2} /></div>}
-                                {activeTab === 'image' && <div className="flex flex-col items-center p-4 bg-slate-50 rounded-xl border border-slate-200"><div className="relative w-32 h-32 mb-4 group cursor-pointer">{customImage ? <img src={customImage} className="w-full h-full object-cover rounded-full border-4 border-white shadow-md"/> : <div className="w-full h-full rounded-full bg-slate-200 flex items-center justify-center border-4 border-white"><ImageIconIcon className="w-10 h-10 text-slate-400"/></div>}<input type="file" className="absolute inset-0 opacity-0 cursor-pointer" accept="image/*" onChange={async(e)=>{ if(e.target.files[0]){ setIsProcessing(true); setCustomImage(await resizeImage(e.target.files[0])); setIsProcessing(false); }}} /></div>{isProcessing ? <p className="text-blue-500">מעבד...</p> : <p className="text-sm">לחץ לבחירת תמונה</p>}</div>}
-                            </div>
-                        </div>
-                        <div className="p-6 border-t border-slate-100 bg-slate-50 flex justify-end gap-3"><button onClick={onClose} className="px-5 py-2.5 rounded-xl font-bold text-slate-500">ביטול</button><button onClick={() => onSave(childId, { themeId: selectedThemeId, useEmoji: activeTab === 'emoji', useImage: activeTab === 'image', iconKey: selectedIconKey, emoji: customEmoji, image: customImage, name: customName })} className="px-8 py-2.5 rounded-xl font-bold text-white bg-blue-600 shadow-lg">שמור</button></div>
-                    </div>
-                </div>
-            );
-        }
-
-        function EditFamilyModal({ initialSettings, currentSettings, onClose, onSave, icons, getIcon }) {
-            const { XIcon, TypeIcon, TargetIcon, PaletteIcon, CheckIcon, SmileIcon, CameraIcon, ImageIconIcon } = icons;
-            const [activeTab, setActiveTab] = useState(currentSettings.useImage ? 'image' : currentSettings.useEmoji ? 'emoji' : 'icon');
-            const [selectedThemeId, setSelectedThemeId] = useState(currentSettings.themeId || initialSettings.theme.id);
-            const [selectedIconKey, setSelectedIconKey] = useState(currentSettings.iconKey || 'trophy');
-            const [customEmoji, setCustomEmoji] = useState(currentSettings.emoji || '🏆');
-            const [customImage, setCustomImage] = useState(currentSettings.image || null);
-            const [customTitle, setCustomTitle] = useState(currentSettings.title || initialSettings.title);
-            const [customTarget, setCustomTarget] = useState(currentSettings.targetPoints || 100);
-            const [isProcessing, setIsProcessing] = useState(false);
-            const ICON_KEYS = ['trophy', 'utensils', 'shirt', 'gamepad', 'home', 'star', 'heart', 'smile', 'sun', 'moon', 'music', 'book', 'bike', 'car', 'cat', 'dog', 'flower', 'camera', 'sparkles'];
-
-            return (
-                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-fade-in">
-                    <div className="bg-white w-full max-w-lg rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
-                        <div className="p-6 border-b border-slate-100 flex justify-between items-center bg-slate-50"><h3 className="text-xl font-bold text-slate-800">עריכת כותרת וסמל</h3><button onClick={onClose} className="p-2 hover:bg-slate-200 rounded-full"><XIcon className="w-5 h-5" /></button></div>
-                        <div className="p-6 overflow-y-auto flex-1">
-                            <div className="mb-6"><h4 className="flex items-center gap-2 font-bold text-slate-700 mb-3"><TypeIcon className="w-5 h-5 text-slate-500" />כותרת</h4><input type="text" value={customTitle} onChange={(e) => setCustomTitle(e.target.value)} className="w-full p-3 rounded-xl border border-slate-300 text-lg" /></div>
-                            <div className="mb-6"><h4 className="flex items-center gap-2 font-bold text-slate-700 mb-3"><TargetIcon className="w-5 h-5 text-slate-500" />יעד נקודות</h4><input type="number" value={customTarget} onChange={(e) => setCustomTarget(e.target.value)} className="w-full p-3 rounded-xl border border-slate-300 text-lg" /></div>
-                            <div className="mb-8"><h4 className="flex items-center gap-2 font-bold text-slate-700 mb-3"><PaletteIcon className="w-5 h-5 text-purple-500" />צבע</h4><div className="flex flex-wrap gap-3">{THEMES.map(t => <button key={t.id} onClick={() => setSelectedThemeId(t.id)} className={`w-10 h-10 rounded-full border-2 flex items-center justify-center ${t.classes.split(' ')[0]} ${selectedThemeId === t.id ? 'border-slate-800 scale-110 shadow-md ring-2' : 'border-transparent'}`}>{selectedThemeId === t.id && <CheckIcon className={`w-5 h-5 ${t.classes.split(' ')[1]}`} />}</button>)}</div></div>
-                            <div>
-                                <h4 className="flex items-center gap-2 font-bold text-slate-700 mb-3"><SmileIcon className="w-5 h-5 text-orange-500" />סמל</h4>
-                                <div className="flex bg-slate-100 p-1 rounded-xl mb-4"><button onClick={() => setActiveTab('icon')} className={`flex-1 py-2 rounded-lg font-medium ${activeTab==='icon'?'bg-white shadow':''}`}>סמלים</button><button onClick={() => setActiveTab('emoji')} className={`flex-1 py-2 rounded-lg font-medium ${activeTab==='emoji'?'bg-white shadow':''}`}>אימוג'י</button><button onClick={() => setActiveTab('image')} className={`flex-1 py-2 rounded-lg font-medium ${activeTab==='image'?'bg-white shadow':''}`}>תמונה</button></div>
-                                {activeTab === 'icon' && <div className="grid grid-cols-5 gap-3">{ICON_KEYS.map((k) => { const I = getIcon(k); return <button key={k} onClick={() => setSelectedIconKey(k)} className={`aspect-square rounded-xl flex items-center justify-center border-2 ${selectedIconKey === k ? 'bg-blue-50 border-blue-500 text-blue-600' : 'bg-white border-slate-200'}`}><I className="w-6 h-6" /></button>; })}</div>}
-                                {activeTab === 'emoji' && <div className="flex flex-col items-center p-4 bg-slate-50 rounded-xl border border-slate-200"><input type="text" value={customEmoji} onChange={(e) => setCustomEmoji(e.target.value)} className="w-24 h-24 text-center text-6xl rounded-2xl border-2 border-slate-300" maxLength={2} /></div>}
-                                {activeTab === 'image' && <div className="flex flex-col items-center p-4 bg-slate-50 rounded-xl border border-slate-200"><div className="relative w-32 h-32 mb-4 group cursor-pointer">{customImage ? <img src={customImage} className="w-full h-full object-cover rounded-full border-4 border-white shadow-md"/> : <div className="w-full h-full rounded-full bg-slate-200 flex items-center justify-center border-4 border-white"><ImageIconIcon className="w-10 h-10 text-slate-400"/></div>}<input type="file" className="absolute inset-0 opacity-0 cursor-pointer" accept="image/*" onChange={async(e)=>{ if(e.target.files[0]){ setIsProcessing(true); setCustomImage(await resizeImage(e.target.files[0])); setIsProcessing(false); }}} /></div>{isProcessing ? <p className="text-blue-500">מעבד...</p> : <p className="text-sm">לחץ לבחירת תמונה</p>}</div>}
-                            </div>
-                        </div>
-                        <div className="p-6 border-t border-slate-100 bg-slate-50 flex justify-end gap-3"><button onClick={onClose} className="px-5 py-2.5 rounded-xl font-bold text-slate-500">ביטול</button><button onClick={() => onSave({ themeId: selectedThemeId, useEmoji: activeTab === 'emoji', useImage: activeTab === 'image', iconKey: selectedIconKey, emoji: customEmoji, image: customImage, title: customTitle, targetPoints: Number(customTarget) })} className="px-8 py-2.5 rounded-xl font-bold text-white bg-blue-600 shadow-lg">שמור</button></div>
-                    </div>
-                </div>
-            );
-        }
-
-        const root = createRoot(document.getElementById('root'));
-        root.render(<App />);
+        ReactDOM.createRoot(document.getElementById('root')).render(<App />);
     </script>
 </body>
 </html>
