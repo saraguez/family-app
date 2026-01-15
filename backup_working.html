@@ -8,12 +8,18 @@
     <!-- ERROR HANDLER -->
     <script>
         window.onerror = function(msg, url, lineNo, columnNo, error) {
+            // Ignore benign resize observer errors
+            if (msg.includes("ResizeObserver loop")) return true;
+
             const container = document.getElementById('root') || document.body;
             container.innerHTML = `
                 <div style="background:#fee2e2; color:#991b1b; padding:20px; margin:20px; border-radius:10px; border: 2px solid #ef4444; direction:ltr; text-align:left;">
                     <h2 style="font-size:24px; font-weight:bold; margin-bottom:10px;">⚠️ App Crashed</h2>
                     <p style="font-weight:bold;">Error: ${msg}</p>
                     <p>Line: ${lineNo}</p>
+                    <hr style="border-color:#fca5a5; margin:10px 0;"/>
+                    <p><strong>Did you update your Firebase Rules?</strong></p>
+                    <p>Go to Firebase Console -> Firestore Database -> Rules and paste the rules provided in the chat.</p>
                 </div>
             `;
             return false;
@@ -72,6 +78,21 @@
         
         const appId = typeof __app_id !== 'undefined' ? __app_id : 'family-tasks-default';
 
+        // --- HELPER FOR DB PATH ---
+        const getUserDoc = (uid) => {
+            // FIXED PATH: Syncs correctly with the listener in App component
+            return db.collection('artifacts').doc(appId).collection('users').doc(uid);
+        };
+
+        const handleFirestoreError = (error) => {
+            console.error("Firestore Operation Error:", error);
+            if (error.code === 'permission-denied') {
+                alert("שגיאת הרשאה! \n\nנראה שחוקי האבטחה ב-Firebase חוסמים את השמירה.\nאנא היכנס ל-Firebase Console ועדכן את החוקים כפי שהוסבר בצ'אט.");
+            } else {
+                alert("אירעה שגיאה: " + error.message);
+            }
+        };
+
         // --- ICONS & HELPERS ---
         const IconBase = ({ children, className, ...props }) => (
             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className} {...props}>{children}</svg>
@@ -125,7 +146,9 @@
             Save: (p) => <IconBase {...p}><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></IconBase>,
             Coins: (p) => <IconBase {...p}><circle cx="8" cy="8" r="6"/><path d="M18.09 10.37A6 6 0 1 1 10.34 18"/><path d="M7 6h1v4"/><path d="m7.1 13.8 3-3.8"/></IconBase>,
             UserPlus: (p) => <IconBase {...p}><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/></IconBase>,
-            BarChart: (p) => <IconBase {...p}><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></IconBase>
+            BarChart: (p) => <IconBase {...p}><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></IconBase>,
+            LogOut: (p) => <IconBase {...p}><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></IconBase>,
+            User: (p) => <IconBase {...p}><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></IconBase>
         };
 
         const ICON_MAP = {
@@ -253,6 +276,18 @@
         }
 
         const LoginScreen = ({ onLogin }) => {
+            const handleGoogleLogin = () => {
+                const provider = new firebase.auth.GoogleAuthProvider();
+                auth.signInWithPopup(provider)
+                    .then((result) => {
+                        console.log("Logged in:", result.user);
+                    })
+                    .catch((error) => {
+                        console.error("Login failed:", error);
+                        alert("שגיאה בהתחברות: " + error.message);
+                    });
+            };
+
             return (
                 <div className="fixed inset-0 flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 p-4">
                     <div className="bg-white p-8 rounded-3xl shadow-2xl max-w-sm w-full text-center">
@@ -260,8 +295,20 @@
                             <Icons.Trophy className="w-10 h-10 text-yellow-600" />
                         </div>
                         <h1 className="text-3xl font-black text-slate-800 mb-2">המבצע המשפחתי</h1>
-                        <p className="text-slate-500 mb-8">טוען נתונים...</p>
-                        <div className="animate-spin rounded-full h-10 w-10 border-t-4 border-b-4 border-blue-500 mx-auto"></div>
+                        <p className="text-slate-500 mb-8">התחבר כדי לשמור ולנהל את המשימות של המשפחה שלך</p>
+                        
+                        <button 
+                            onClick={handleGoogleLogin}
+                            className="w-full py-4 rounded-xl bg-white border-2 border-slate-200 hover:bg-slate-50 hover:border-slate-300 transition-all flex items-center justify-center gap-3 shadow-sm group"
+                        >
+                            <svg className="w-6 h-6" viewBox="0 0 24 24">
+                                <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
+                                <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
+                                <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/>
+                                <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
+                            </svg>
+                            <span className="font-bold text-slate-700 group-hover:text-slate-900">התחבר עם Google</span>
+                        </button>
                     </div>
                 </div>
             );
@@ -556,7 +603,7 @@
             );
         };
 
-        const EditChildModal = ({ childId, initialSettings, currentSettings, childName, onClose, onSave }) => {
+        const EditChildModal = ({ childId, initialSettings, currentSettings, childName, onClose, onSave, onDelete }) => {
             const getInitialTab = () => { if (currentSettings.useImage) return 'image'; if (currentSettings.useEmoji) return 'emoji'; return 'icon'; };
             const [activeTab, setActiveTab] = useState(getInitialTab());
             const [selectedThemeId, setSelectedThemeId] = useState(currentSettings.themeId || initialSettings.theme.id);
@@ -574,6 +621,12 @@
                 }
             };
             const handleSave = () => { onSave(childId, { themeId: selectedThemeId, useEmoji: activeTab === 'emoji', useImage: activeTab === 'image', iconKey: selectedIconKey, emoji: customEmoji || '😊', image: customImage || null, name: customName }); };
+            
+            const handleDelete = () => {
+                if (confirm(`האם אתה בטוח שברצונך למחוק את ${customName}? פעולה זו אינה הפיכה.`)) {
+                    onDelete(childId);
+                }
+            };
 
             return (
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-fade-in">
@@ -590,7 +643,13 @@
                                 {activeTab === 'image' && (<div className="flex flex-col items-center p-4 bg-slate-50 rounded-xl border border-slate-200"><div className="relative w-32 h-32 mb-4 group cursor-pointer">{customImage ? (<img src={customImage} alt="Preview" className="w-full h-full object-cover rounded-full border-4 border-white shadow-md" />) : (<div className="w-full h-full rounded-full bg-slate-200 flex items-center justify-center border-4 border-white shadow-md"><Icons.ImageIcon className="w-10 h-10 text-slate-400" /></div>)}<label htmlFor="file-upload" className="absolute inset-0 flex items-center justify-center bg-black/30 text-white opacity-0 group-hover:opacity-100 rounded-full transition-opacity cursor-pointer"><Icons.Upload className="w-8 h-8" /></label><input id="file-upload" type="file" accept="image/*" onChange={handleImageUpload} className="hidden" /></div>{isProcessingImage ? (<p className="text-sm text-blue-500 animate-pulse">מעבד תמונה...</p>) : (<label htmlFor="file-upload" className="px-4 py-2 bg-white border border-slate-300 rounded-lg text-sm font-medium hover:bg-slate-50 cursor-pointer">בחר תמונה</label>)}<p className="text-xs text-slate-400 mt-2 text-center">בחר תמונה מהמכשיר. התמונה תוקטן אוטומטית.</p></div>)}
                             </div>
                         </div>
-                        <div className="p-6 border-t border-slate-100 bg-slate-50 flex justify-end gap-3"><button onClick={onClose} className="px-5 py-2.5 rounded-xl font-bold text-slate-500 hover:bg-slate-200 transition-colors">ביטול</button><button onClick={handleSave} className="px-8 py-2.5 rounded-xl font-bold text-white bg-blue-600 hover:bg-blue-700 shadow-lg shadow-blue-200 transition-all">שמור שינויים</button></div>
+                        <div className="p-6 border-t border-slate-100 bg-slate-50 flex justify-between items-center gap-3">
+                            <button onClick={handleDelete} className="px-4 py-2 rounded-xl font-bold text-red-500 hover:bg-red-50 transition-colors flex items-center gap-2"><Icons.Trash2 className="w-5 h-5" />מחק ילד</button>
+                            <div className="flex gap-3">
+                                <button onClick={onClose} className="px-5 py-2.5 rounded-xl font-bold text-slate-500 hover:bg-slate-200 transition-colors">ביטול</button>
+                                <button onClick={handleSave} className="px-8 py-2.5 rounded-xl font-bold text-white bg-blue-600 hover:bg-blue-700 shadow-lg shadow-blue-200 transition-all">שמור שינויים</button>
+                            </div>
+                        </div>
                     </div>
                 </div>
             );
@@ -739,8 +798,8 @@
                             await auth.signInAnonymously();
                         }
                     } else {
-                        // Otherwise, use Anonymous auth (works in local files and previews)
-                        await auth.signInAnonymously();
+                        // Don't auto-login anonymously to allow Google Login button to show
+                        // await auth.signInAnonymously(); 
                     }
                 };
                 
@@ -752,7 +811,7 @@
                     
                     if (currentUser) {
                         // Use a safe path structure: artifacts/{appId}/users/{uid}
-                        const docRef = db.collection('artifacts').doc(appId).collection('users').doc(currentUser.uid);
+                        const docRef = getUserDoc(currentUser.uid);
                         
                         // Real-time listener
                         const unsubscribeDoc = docRef.onSnapshot((docSnap) => {
@@ -767,7 +826,7 @@
                                 setChildScores(data.childScores || {});
                                 if (data.childrenList) setChildrenList(data.childrenList);
                             } else {
-                                // Initialize new user data
+                                // Initialize new user data with merge:true just in case
                                 docRef.set({ 
                                     points: 0, 
                                     completedTasks: {}, 
@@ -778,7 +837,7 @@
                                     childScores: {}, 
                                     childrenList: CHILDREN_DEFAULTS,
                                     ownerEmail: currentUser.email || 'anonymous'
-                                });
+                                }, { merge: true });
                             }
                         }, (error) => {
                             console.error("Firestore Listen Error:", error);
@@ -801,7 +860,9 @@
                 const settings = childSettings[childId] || {};
                 const themeId = settings.themeId || childDefault.defaultThemeId;
                 const theme = THEMES.find(t => t.id === themeId) || THEMES[0];
-                const useImage = settings.useImage; const image = settings.image; const useEmoji = settings.useEmoji; const emoji = settings.emoji || '😊'; const iconKey = settings.iconKey || childDefault.defaultIconKey;
+                const useImage = settings.useImage; const image = settings.image; const useEmoji = settings.useEmoji; const emoji = settings.emoji || '😊'; 
+                // Fix: use childDefault instead of child
+                const iconKey = settings.iconKey || childDefault.defaultIconKey; 
                 const IconComponent = ICON_MAP[iconKey] || Icons.Smile;
                 const name = settings.name || childDefault.name;
                 return { theme, IconComponent, useEmoji, emoji, useImage, image, name };
@@ -833,8 +894,8 @@
                 if (!user) return;
                 const newEntry = { text, diff: pointsDiff, timestamp: Date.now() };
                 const updatedHistory = [newEntry, ...history].slice(0, 50);
-                const docRef = db.collection('artifacts').doc(appId).collection('users').doc(user.uid);
-                await docRef.update({ history: updatedHistory });
+                const docRef = getUserDoc(user.uid);
+                await docRef.update({ history: updatedHistory }).catch(handleFirestoreError);
             };
 
             const handleDeleteHistoryEntry = (index) => {
@@ -843,11 +904,11 @@
                     const item = history[index];
                     const newHistory = [...history];
                     newHistory.splice(index, 1);
-                    const docRef = db.collection('artifacts').doc(appId).collection('users').doc(user.uid);
+                    const docRef = getUserDoc(user.uid);
                     await docRef.update({ 
                         history: newHistory,
                         points: firebase.firestore.FieldValue.increment(-item.diff)
-                    });
+                    }).catch(handleFirestoreError);
                 });
             };
 
@@ -861,7 +922,7 @@
                 if (!user) return;
                 const taskKey = `${getTodayKey()}_${childId}_${taskId}`;
                 const isAlreadyDone = completedTasks[taskKey];
-                const docRef = db.collection('artifacts').doc(appId).collection('users').doc(user.uid);
+                const docRef = getUserDoc(user.uid);
                 const childName = getChildVisuals(childId).name;
                 
                 const updates = {};
@@ -870,21 +931,21 @@
                     updates.points = firebase.firestore.FieldValue.increment(-1);
                     updates[`completedTasks.${taskKey}`] = false;
                     updates[`childScores.${childId}`] = firebase.firestore.FieldValue.increment(-1);
-                    await docRef.update(updates);
+                    await docRef.update(updates).catch(handleFirestoreError);
                     addToHistoryLog(`ביטול: ${taskText || 'משימה'} (${childName})`, -1);
                 } else {
                     playSuccessSound(); triggerConfetti();
                     updates.points = firebase.firestore.FieldValue.increment(1);
                     updates[`completedTasks.${taskKey}`] = true;
                     updates[`childScores.${childId}`] = firebase.firestore.FieldValue.increment(1);
-                    await docRef.update(updates);
+                    await docRef.update(updates).catch(handleFirestoreError);
                     addToHistoryLog(`משימה: ${taskText || 'משימה'} (${childName})`, 1);
                 }
             };
 
             const handleAddTask = async (childId, newTaskText, taskType, addToAll) => {
                 if (!user) return;
-                const docRef = db.collection('artifacts').doc(appId).collection('users').doc(user.uid);
+                const docRef = getUserDoc(user.uid);
                 let updates = {};
                 const childrenToUpdate = addToAll ? childrenList.map(c => c.id) : [childId];
                 childrenToUpdate.forEach(cid => {
@@ -892,13 +953,13 @@
                     const newTask = { id: `custom_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`, text: newTaskText, type: taskType, date: getTodayKey(), createdAt: Date.now() };
                     updates[`childTasks.${cid}`] = [...currentTasks, newTask];
                 });
-                await docRef.update(updates);
+                await docRef.update(updates).catch(handleFirestoreError);
             };
 
             const handleEditTask = async (childId, taskId, newText, newType) => {
                 verifyParentAuth(async () => {
                     if (!user) return;
-                    const docRef = db.collection('artifacts').doc(appId).collection('users').doc(user.uid);
+                    const docRef = getUserDoc(user.uid);
                     const currentTasks = tasksData[childId] || (childrenList.find(c => c.id === childId)?.initialTasks || []);
                     const updatedTasks = currentTasks.map(t => 
                         t.id === taskId ? { 
@@ -908,13 +969,13 @@
                             date: newType === 'one-time' ? getTodayKey() : t.date 
                         } : t
                     );
-                    await docRef.update({ [`childTasks.${childId}`]: updatedTasks });
+                    await docRef.update({ [`childTasks.${childId}`]: updatedTasks }).catch(handleFirestoreError);
                 });
             };
 
             const handleMoveTask = async (childId, taskId, direction) => {
                 if (!user) return;
-                const docRef = db.collection('artifacts').doc(appId).collection('users').doc(user.uid);
+                const docRef = getUserDoc(user.uid);
                 const currentTasks = [...(tasksData[childId] || (childrenList.find(c => c.id === childId)?.initialTasks || []))];
                 const index = currentTasks.findIndex(t => t.id === taskId);
                 if (index < 0) return;
@@ -923,22 +984,22 @@
                 } else if (direction === 'down' && index < currentTasks.length - 1) {
                     [currentTasks[index], currentTasks[index + 1]] = [currentTasks[index + 1], currentTasks[index]];
                 }
-                await docRef.update({ [`childTasks.${childId}`]: currentTasks });
+                await docRef.update({ [`childTasks.${childId}`]: currentTasks }).catch(handleFirestoreError);
             };
 
             const handleDeleteTask = async (childId, taskId) => {
                 verifyParentAuth(async () => {
                     if (!user) return;
-                    const docRef = db.collection('artifacts').doc(appId).collection('users').doc(user.uid);
+                    const docRef = getUserDoc(user.uid);
                     const currentTasks = tasksData[childId] || (childrenList.find(c => c.id === childId)?.initialTasks || []);
                     const updatedChildTasks = { ...tasksData, [childId]: currentTasks.filter(t => t.id !== taskId) };
-                    await docRef.update({ childTasks: updatedChildTasks });
+                    await docRef.update({ childTasks: updatedChildTasks }).catch(handleFirestoreError);
                 });
             };
 
             const handleBonusPoint = async (amount = 1, childId = null) => {
                 if (!user) return; playSuccessSound(); triggerConfetti();
-                const docRef = db.collection('artifacts').doc(appId).collection('users').doc(user.uid);
+                const docRef = getUserDoc(user.uid);
                 const updates = { points: firebase.firestore.FieldValue.increment(amount) };
                 let logMessage = `בונוס משפחתי`;
                 if (childId) {
@@ -946,30 +1007,42 @@
                     const childName = getChildVisuals(childId).name;
                     logMessage = `בונוס ל${childName}`;
                 }
-                await docRef.update(updates);
+                await docRef.update(updates).catch(handleFirestoreError);
                 addToHistoryLog(logMessage, amount);
                 setShowBonusModal(false);
             };
 
             const handleSaveSettings = async (childId, newSettings) => {
                 if (!user) return;
-                const docRef = db.collection('artifacts').doc(appId).collection('users').doc(user.uid);
-                await docRef.update({ childSettings: { ...childSettings, [childId]: { ...childSettings[childId], ...newSettings } } });
-                setEditingChildId(null);
+                const docRef = getUserDoc(user.uid);
+                try {
+                    await docRef.set({ 
+                        childSettings: {
+                            [childId]: newSettings 
+                        }
+                    }, { merge: true });
+                    setEditingChildId(null);
+                } catch (error) {
+                    handleFirestoreError(error);
+                }
             };
 
             const handleSaveFamilySettings = async (newSettings) => {
                 if (!user) return;
-                const docRef = db.collection('artifacts').doc(appId).collection('users').doc(user.uid);
-                await docRef.update({ familySettings: newSettings });
-                setShowFamilyEditModal(false);
+                const docRef = getUserDoc(user.uid);
+                try {
+                    await docRef.set({ familySettings: newSettings }, { merge: true });
+                    setShowFamilyEditModal(false);
+                } catch (error) {
+                    handleFirestoreError(error);
+                }
             };
 
             const handleResetPoints = async () => {
                 verifyParentAuth(async () => {
                     if (!user) return;
-                    const docRef = db.collection('artifacts').doc(appId).collection('users').doc(user.uid);
-                    await docRef.update({ points: 0, childScores: {} });
+                    const docRef = getUserDoc(user.uid);
+                    await docRef.update({ points: 0, childScores: {} }).catch(handleFirestoreError);
                     addToHistoryLog('איפוס נקודות', -points);
                     setShowWinModal(false);
                 });
@@ -978,9 +1051,9 @@
             const handleCashOut = async (amount) => {
                 if (!user || !cashOutChildId) return;
                 const pointsToDeduct = amount * pointsPerShekel;
-                const docRef = db.collection('artifacts').doc(appId).collection('users').doc(user.uid);
+                const docRef = getUserDoc(user.uid);
                 const childName = getChildVisuals(cashOutChildId).name;
-                await docRef.update({ [`childScores.${cashOutChildId}`]: firebase.firestore.FieldValue.increment(-pointsToDeduct) });
+                await docRef.update({ [`childScores.${cashOutChildId}`]: firebase.firestore.FieldValue.increment(-pointsToDeduct) }).catch(handleFirestoreError);
                 addToHistoryLog(`פדיון כסף עבור ${childName}: ₪${amount}`, 0); 
                 setShowCashOutModal(false);
                 setCashOutChildId(null);
@@ -988,7 +1061,7 @@
 
             const handleAddChild = async (newChildData) => {
                 if (!user) return;
-                const docRef = db.collection('artifacts').doc(appId).collection('users').doc(user.uid);
+                const docRef = getUserDoc(user.uid);
                 const newChildId = `child_${Date.now()}`;
                 const newChild = {
                     id: newChildId,
@@ -998,13 +1071,38 @@
                     initialTasks: getStandardTasks(newChildId)
                 };
                 const updatedList = [...childrenList, newChild];
-                await docRef.update({ childrenList: updatedList });
+                await docRef.update({ childrenList: updatedList }).catch(handleFirestoreError);
                 setShowAddChildModal(false);
             };
 
+            const handleDeleteChild = async (childId) => {
+                verifyParentAuth(async () => {
+                    if (!user) return;
+                    const docRef = getUserDoc(user.uid);
+                    
+                    // Filter out the deleted child
+                    const updatedList = childrenList.filter(c => c.id !== childId);
+                    
+                    // Prepare updates (remove child from list, and delete their specific data fields)
+                    const updates = {
+                        childrenList: updatedList,
+                        [`childSettings.${childId}`]: firebase.firestore.FieldValue.delete(),
+                        [`childTasks.${childId}`]: firebase.firestore.FieldValue.delete(),
+                        [`childScores.${childId}`]: firebase.firestore.FieldValue.delete()
+                    };
+
+                    await docRef.update(updates).catch(handleFirestoreError);
+                    setEditingChildId(null);
+                });
+            };
+
             const handleLogout = () => {
-                auth.signOut();
-                setUser(null);
+                if (confirm("האם להתנתק ולהחליף משתמש?")) {
+                    auth.signOut().then(() => {
+                        setUser(null);
+                        window.location.reload(); // Force reload to ensure clean state for next login
+                    });
+                }
             };
 
             const createLongPressHandlers = (callback, onClick) => ({
@@ -1064,10 +1162,18 @@
                                     </div>
                                     <div><h1 className="text-2xl font-bold text-slate-800">{familyVisuals.title}</h1><div className="text-slate-500 text-sm flex gap-2"><span>{currentDate}</span>{hebrewDate && <span className="border-r border-slate-300 pr-2">{hebrewDate}</span>}</div></div>
                                 </div>
-                                <div className="flex gap-2">
-                                    <button onClick={() => verifyParentAuth(() => setShowFamilyEditModal(true))} className="p-2 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 transition-colors" title="הגדרות הורים"><Icons.Settings className="w-6 h-6" /></button>
-                                    <button onClick={() => setShowHistoryModal(true)} className="p-2 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 transition-colors" title="היסטוריה"><Icons.BarChart className="w-6 h-6" /></button>
-                                    <button onClick={handleLogout} className="p-2 rounded-full bg-slate-100 hover:bg-red-100 text-slate-500 hover:text-red-500 transition-colors" title="התנתק"><Icons.Unlock className="w-6 h-6" /></button>
+                                <div className="flex flex-col items-end">
+                                    <div className="flex gap-2">
+                                        <button onClick={() => verifyParentAuth(() => setShowFamilyEditModal(true))} className="p-2 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 transition-colors" title="הגדרות הורים"><Icons.Settings className="w-6 h-6" /></button>
+                                        <button onClick={() => setShowHistoryModal(true)} className="p-2 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 transition-colors" title="היסטוריה"><Icons.BarChart className="w-6 h-6" /></button>
+                                        <button onClick={handleLogout} className="p-2 rounded-full bg-slate-100 hover:bg-red-100 text-slate-500 hover:text-red-500 transition-colors" title="החלף משתמש"><Icons.LogOut className="w-6 h-6" /></button>
+                                    </div>
+                                    {user && (
+                                        <div className="text-[10px] text-slate-400 mt-1 flex items-center gap-1 px-1">
+                                            <Icons.User className="w-3 h-3" />
+                                            <span className="max-w-[120px] truncate" title={user.email}>{user.email || user.displayName}</span>
+                                        </div>
+                                    )}
                                 </div>
                             </div>
                             <div className="flex-1 w-full md:w-auto md:mx-8">
@@ -1129,7 +1235,7 @@
                         </button>
                     </div></main>
                     {selectedChild && <TaskModal child={selectedChild} tasks={getChildTasks(selectedChild.id)} completedTasks={completedTasks} visuals={getChildVisuals(selectedChild.id)} onToggleTask={handleTaskToggle} onClose={() => setSelectedChild(null)} onAddTask={handleAddTask} onDeleteTask={handleDeleteTask} onEditTask={handleEditTask} onMoveTask={handleMoveTask} getTodayKey={getTodayKey} />}
-                    {editingChildId && <EditChildModal childId={editingChildId} initialSettings={getChildVisuals(editingChildId)} currentSettings={childSettings[editingChildId] || {}} onClose={() => setEditingChildId(null)} onSave={handleSaveSettings} childName={childrenList.find(c => c.id === editingChildId)?.name} />}
+                    {editingChildId && <EditChildModal childId={editingChildId} initialSettings={getChildVisuals(editingChildId)} currentSettings={childSettings[editingChildId] || {}} onClose={() => setEditingChildId(null)} onSave={handleSaveSettings} onDelete={handleDeleteChild} childName={childrenList.find(c => c.id === editingChildId)?.name} />}
                     {showFamilyEditModal && <EditFamilyModal initialSettings={getFamilyVisuals()} currentSettings={familySettings} onClose={() => setShowFamilyEditModal(false)} onSave={handleSaveFamilySettings} />}
                     {showBonusModal && <BonusModal onClose={() => setShowBonusModal(false)} onConfirm={handleBonusPoint} childrenData={childrenList} childSettings={childSettings} />}
                     {showWinModal && (<div className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-black/60 backdrop-blur-md animate-fade-in"><div className="bg-white w-full max-w-lg rounded-[2.5rem] shadow-2xl p-8 text-center animate-scale-up border-8 border-yellow-300 relative overflow-hidden"><div className="absolute top-0 left-0 w-full h-32 bg-yellow-100 rounded-b-[50%] -translate-y-16"></div><div className="relative z-10"><div className="mx-auto w-32 h-32 bg-gradient-to-b from-yellow-300 to-yellow-500 rounded-full flex items-center justify-center mb-6 shadow-xl border-4 border-white animate-bounce"><Icons.Trophy className="w-16 h-16 text-white drop-shadow-md" /></div><h2 className="text-5xl font-black text-slate-800 mb-2 tracking-tight">כל הכבוד!</h2><h3 className="text-2xl font-bold text-slate-600 mb-6">הגעתם ליעד של {targetPoints} נקודות!</h3><div className="p-4 bg-yellow-50 rounded-2xl mb-8 border-2 border-yellow-200"><p className="text-yellow-800 text-lg">"יגעת ומצאת תאמין!"</p><p className="text-yellow-700 font-bold mt-1">המשיכו כך!</p></div><button onClick={handleResetPoints} className="w-full py-4 rounded-2xl bg-gradient-to-r from-blue-500 to-blue-600 text-white font-bold text-xl shadow-xl hover:shadow-2xl hover:scale-[1.02] transition-all flex items-center justify-center gap-2 group"><Icons.RotateCcw className="w-6 h-6 group-hover:rotate-180 transition-transform duration-500" />אפס נקודות והתחל מחדש</button></div></div></div>)}
