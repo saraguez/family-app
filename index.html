@@ -1262,7 +1262,17 @@
 
                             return (
                                 <div key={child.id} className={`group relative bg-white rounded-3xl p-6 border-4 ${theme.classes.split(' ')[2]} shadow-md hover:shadow-xl hover:-translate-y-2 transition-all duration-300 flex flex-col items-center justify-center gap-4 h-64 select-none`} {...createLongPressHandlers(() => setEditingChildId(child.id), () => setSelectedChild(child))}>
-                                    <button onClick={(e) => { e.stopPropagation(); verifyParentAuth(() => setEditingChildId(child.id)); }} className="absolute top-2 right-2 p-2 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-400 hover:text-slate-600 transition-colors z-10" title="עריכת עיצוב"><Icons.Settings className="w-4 h-4" /></button>
+                                    <button 
+                                        onClick={(e) => { e.stopPropagation(); verifyParentAuth(() => setEditingChildId(child.id)); }} 
+                                        onMouseDown={(e) => e.stopPropagation()}
+                                        onMouseUp={(e) => e.stopPropagation()}
+                                        onTouchStart={(e) => e.stopPropagation()}
+                                        onTouchEnd={(e) => e.stopPropagation()}
+                                        className="absolute top-2 right-2 p-2 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-400 hover:text-slate-600 transition-colors z-30" 
+                                        title="עריכת עיצוב"
+                                    >
+                                        <Icons.Settings className="w-4 h-4" />
+                                    </button>
                                     
                                     <div className="absolute top-0 left-0 -mt-3 -ml-3 bg-gradient-to-br from-yellow-400 to-orange-500 text-white w-10 h-10 flex items-center justify-center rounded-full shadow-lg font-bold border-2 border-white z-20">
                                         {currentScore}
