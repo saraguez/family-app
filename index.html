@@ -19,7 +19,7 @@
                     <p>Line: ${lineNo}</p>
                     <hr style="border-color:#fca5a5; margin:10px 0;"/>
                     <p><strong>Did you update your Firebase Rules?</strong></p>
-                    <p>Go to Firebase Console -> Firestore Database -> Rules and allow read/write for authenticated users.</p>
+                    <p>Go to Firebase Console -> Firestore Database -> Rules and paste the rules provided in the chat.</p>
                 </div>
             `;
             return false;
@@ -55,7 +55,6 @@
         const { useState, useEffect, useRef, useMemo } = React;
 
         // --- FIREBASE CONFIGURATION ---
-        // 🔴🔴🔴 IMPORTANT: Ensure your Rules in Firebase Console allow writes! 🔴🔴🔴
         const firebaseConfigRaw = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {
             apiKey: "AIzaSyCET42vMcj1uC0nMsqsWy2xd-yv1WC7e68",
             authDomain: "family-tasks-ee68f.firebaseapp.com",
@@ -81,15 +80,14 @@
 
         // --- HELPER FOR DB PATH ---
         const getUserDoc = (uid) => {
-            // Path: artifacts/{appId}/users/{userId}/data/family_app_v1
-            // This isolates every user's data
-            return db.collection('artifacts').doc(appId).collection('users').doc(uid).collection('data').doc('family_app_v1');
+            // FIXED PATH: Syncs correctly with the listener in App component
+            return db.collection('artifacts').doc(appId).collection('users').doc(uid);
         };
 
         const handleFirestoreError = (error) => {
             console.error("Firestore Operation Error:", error);
             if (error.code === 'permission-denied') {
-                alert("שגיאת הרשאה! \n\nנראה שחוקי האבטחה ב-Firebase חוסמים את השמירה.\nאנא היכנס ל-Firebase Console -> Firestore Database -> Rules\nושנה את החוקים ל:\nallow read, write: if request.auth != null;");
+                alert("שגיאת הרשאה! \n\nנראה שחוקי האבטחה ב-Firebase חוסמים את השמירה.\nאנא היכנס ל-Firebase Console ועדכן את החוקים כפי שהוסבר בצ'אט.");
             } else {
                 alert("אירעה שגיאה: " + error.message);
             }
