@@ -19,7 +19,7 @@
                     <p>Line: ${lineNo}</p>
                     <hr style="border-color:#fca5a5; margin:10px 0;"/>
                     <p><strong>Did you update your Firebase Rules?</strong></p>
-                    <p>Go to Firebase Console -> Firestore Database -> Rules and paste the rules provided in the chat.</p>
+                    <p>Go to Firebase Console -> Firestore Database -> Rules and allow read/write for authenticated users.</p>
                 </div>
             `;
             return false;
@@ -80,7 +80,7 @@
 
         // --- HELPER FOR DB PATH ---
         const getUserDoc = (uid) => {
-            // FIXED PATH: Syncs correctly with the listener in App component
+            // Reverted path to ensure previous data is accessible
             return db.collection('artifacts').doc(appId).collection('users').doc(uid);
         };
 
@@ -655,7 +655,7 @@
             );
         };
 
-        const EditFamilyModal = ({ initialSettings, currentSettings, onClose, onSave }) => {
+        const EditFamilyModal = ({ initialSettings, currentSettings, childrenList, onClose, onSave }) => {
             const getInitialTab = () => { if (currentSettings.useImage) return 'image'; if (currentSettings.useEmoji) return 'emoji'; return 'icon'; };
             const [activeTab, setActiveTab] = useState(getInitialTab());
             const [selectedThemeId, setSelectedThemeId] = useState(currentSettings.themeId || initialSettings.theme.id);
@@ -667,6 +667,7 @@
             const [customPointsPerShekel, setCustomPointsPerShekel] = useState(currentSettings.pointsPerShekel || FAMILY_DEFAULT.defaultPointsPerShekel);
             const [customPin, setCustomPin] = useState(currentSettings.parentPin || "");
             const [isProcessingImage, setIsProcessingImage] = useState(false);
+            const [localChildren, setLocalChildren] = useState(childrenList || []);
 
             const handleImageUpload = async (e) => {
                 const file = e.target.files[0];
@@ -674,6 +675,16 @@
                 setIsProcessingImage(true);
                 try { const resizedBase64 = await resizeImage(file); setCustomImage(resizedBase64); } catch (err) { console.error("Image processing error", err); } finally { setIsProcessingImage(false); }
                 }
+            };
+
+            const handleMoveChild = (index, direction) => {
+                const newChildren = [...localChildren];
+                if (direction === 'up' && index > 0) {
+                    [newChildren[index], newChildren[index - 1]] = [newChildren[index - 1], newChildren[index]];
+                } else if (direction === 'down' && index < newChildren.length - 1) {
+                    [newChildren[index], newChildren[index + 1]] = [newChildren[index + 1], newChildren[index]];
+                }
+                setLocalChildren(newChildren);
             };
 
             const handleSave = () => {
@@ -688,7 +699,7 @@
                     targetPoints: Number(customTarget),
                     pointsPerShekel: Number(customPointsPerShekel),
                     parentPin: customPin // Save PIN
-                });
+                }, localChildren);
             };
 
             return (
@@ -700,6 +711,34 @@
                         <div className="mb-6"><h4 className="flex items-center gap-2 font-bold text-slate-700 mb-3"><Icons.Target className="w-5 h-5 text-slate-500" />יעד נקודות</h4><input type="number" value={customTarget} onChange={(e) => setCustomTarget(e.target.value)} className="w-full p-3 rounded-xl border border-slate-300 focus:border-blue-500 focus:ring-4 focus:ring-blue-100 outline-none text-lg" placeholder="100" min="1" /></div>
                         <div className="mb-6"><h4 className="flex items-center gap-2 font-bold text-slate-700 mb-3"><Icons.Coins className="w-5 h-5 text-slate-500" />כמה נקודות שוות שקל?</h4><input type="number" value={customPointsPerShekel} onChange={(e) => setCustomPointsPerShekel(e.target.value)} className="w-full p-3 rounded-xl border border-slate-300 focus:border-blue-500 focus:ring-4 focus:ring-blue-100 outline-none text-lg" placeholder="5" min="1" /></div>
                         <div className="mb-6"><h4 className="flex items-center gap-2 font-bold text-slate-700 mb-3"><Icons.Lock className="w-5 h-5 text-slate-500" />קוד הורים (אופציונלי)</h4><input type="text" maxLength="4" value={customPin} onChange={(e) => setCustomPin(e.target.value.replace(/\D/g, ''))} className="w-full p-3 rounded-xl border border-slate-300 focus:border-blue-500 focus:ring-4 focus:ring-blue-100 outline-none text-lg tracking-widest text-center" placeholder="הגדר קוד (4 ספרות)" /><p className="text-xs text-slate-400 mt-1">השאר ריק כדי לבטל נעילה</p></div>
+                        
+                        <div className="mb-8">
+                            <h4 className="flex items-center gap-2 font-bold text-slate-700 mb-3"><Icons.Repeat className="w-5 h-5 text-blue-500" />סדר הילדים</h4>
+                            <div className="space-y-2">
+                                {localChildren.map((child, index) => (
+                                    <div key={child.id} className="flex items-center justify-between p-3 bg-slate-50 rounded-xl border border-slate-200">
+                                        <span className="font-bold text-slate-700">{child.name}</span>
+                                        <div className="flex gap-1">
+                                            <button 
+                                                onClick={() => handleMoveChild(index, 'up')} 
+                                                disabled={index === 0}
+                                                className={`p-1.5 rounded-lg ${index === 0 ? 'text-slate-300' : 'text-blue-600 hover:bg-blue-100'}`}
+                                            >
+                                                <Icons.ArrowUp className="w-4 h-4" />
+                                            </button>
+                                            <button 
+                                                onClick={() => handleMoveChild(index, 'down')} 
+                                                disabled={index === localChildren.length - 1}
+                                                className={`p-1.5 rounded-lg ${index === localChildren.length - 1 ? 'text-slate-300' : 'text-blue-600 hover:bg-blue-100'}`}
+                                            >
+                                                <Icons.ArrowDown className="w-4 h-4" />
+                                            </button>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+
                         <div className="mb-8"><h4 className="flex items-center gap-2 font-bold text-slate-700 mb-3"><Icons.Palette className="w-5 h-5 text-purple-500" />בחר צבע</h4><div className="flex flex-wrap gap-3">{THEMES.map(theme => (<button key={theme.id} onClick={() => setSelectedThemeId(theme.id)} className={`w-10 h-10 rounded-full border-2 flex items-center justify-center transition-all ${theme.classes.split(' ')[0]} ${selectedThemeId === theme.id ? 'border-slate-800 scale-110 shadow-md ring-2 ring-slate-200' : 'border-transparent'}`}>{selectedThemeId === theme.id && <Icons.Check className={`w-5 h-5 ${theme.classes.split(' ')[1]}`} />}</button>))}</div></div>
                         <div>
                             <h4 className="flex items-center gap-2 font-bold text-slate-700 mb-3"><Icons.Smile className="w-5 h-5 text-orange-500" />בחר סמל, אימוג'י או תמונה</h4>
@@ -890,9 +929,21 @@
             };
             const handlePinSuccess = () => { setShowPinModal(false); if (pendingAction) { pendingAction(); setPendingAction(null); } };
 
-            const addToHistoryLog = async (text, pointsDiff) => {
+            // UPDATED: addToHistoryLog now accepts childId and explicit childDiff
+            const addToHistoryLog = async (text, pointsDiff, childId = null, childPointsDiff = null) => {
                 if (!user) return;
-                const newEntry = { text, diff: pointsDiff, timestamp: Date.now() };
+                
+                // If childPointsDiff is not passed, default to pointsDiff (common for tasks/bonuses)
+                const actualChildDiff = childPointsDiff !== null ? childPointsDiff : (childId ? pointsDiff : 0);
+
+                const newEntry = { 
+                    text, 
+                    diff: pointsDiff, 
+                    childId, 
+                    childDiff: actualChildDiff, 
+                    timestamp: Date.now() 
+                };
+                
                 const updatedHistory = [newEntry, ...history].slice(0, 50);
                 const docRef = getUserDoc(user.uid);
                 await docRef.update({ history: updatedHistory }).catch(handleFirestoreError);
@@ -905,10 +956,18 @@
                     const newHistory = [...history];
                     newHistory.splice(index, 1);
                     const docRef = getUserDoc(user.uid);
-                    await docRef.update({ 
+
+                    const updates = { 
                         history: newHistory,
                         points: firebase.firestore.FieldValue.increment(-item.diff)
-                    }).catch(handleFirestoreError);
+                    };
+
+                    // UPDATED: If the history item belongs to a specific child, revert their score too
+                    if (item.childId && item.childDiff) {
+                        updates[`childScores.${item.childId}`] = firebase.firestore.FieldValue.increment(-item.childDiff);
+                    }
+
+                    await docRef.update(updates).catch(handleFirestoreError);
                 });
             };
 
@@ -932,14 +991,16 @@
                     updates[`completedTasks.${taskKey}`] = false;
                     updates[`childScores.${childId}`] = firebase.firestore.FieldValue.increment(-1);
                     await docRef.update(updates).catch(handleFirestoreError);
-                    addToHistoryLog(`ביטול: ${taskText || 'משימה'} (${childName})`, -1);
+                    // UPDATED: Pass childId to log
+                    addToHistoryLog(`ביטול: ${taskText || 'משימה'} (${childName})`, -1, childId);
                 } else {
                     playSuccessSound(); triggerConfetti();
                     updates.points = firebase.firestore.FieldValue.increment(1);
                     updates[`completedTasks.${taskKey}`] = true;
                     updates[`childScores.${childId}`] = firebase.firestore.FieldValue.increment(1);
                     await docRef.update(updates).catch(handleFirestoreError);
-                    addToHistoryLog(`משימה: ${taskText || 'משימה'} (${childName})`, 1);
+                    // UPDATED: Pass childId to log
+                    addToHistoryLog(`משימה: ${taskText || 'משימה'} (${childName})`, 1, childId);
                 }
             };
 
@@ -1008,7 +1069,8 @@
                     logMessage = `בונוס ל${childName}`;
                 }
                 await docRef.update(updates).catch(handleFirestoreError);
-                addToHistoryLog(logMessage, amount);
+                // UPDATED: Pass childId to log
+                addToHistoryLog(logMessage, amount, childId);
                 setShowBonusModal(false);
             };
 
@@ -1027,11 +1089,14 @@
                 }
             };
 
-            const handleSaveFamilySettings = async (newSettings) => {
+            const handleSaveFamilySettings = async (newSettings, newChildrenList) => {
                 if (!user) return;
                 const docRef = getUserDoc(user.uid);
                 try {
-                    await docRef.set({ familySettings: newSettings }, { merge: true });
+                    await docRef.set({ 
+                        familySettings: newSettings,
+                        childrenList: newChildrenList
+                    }, { merge: true });
                     setShowFamilyEditModal(false);
                 } catch (error) {
                     handleFirestoreError(error);
@@ -1054,7 +1119,8 @@
                 const docRef = getUserDoc(user.uid);
                 const childName = getChildVisuals(cashOutChildId).name;
                 await docRef.update({ [`childScores.${cashOutChildId}`]: firebase.firestore.FieldValue.increment(-pointsToDeduct) }).catch(handleFirestoreError);
-                addToHistoryLog(`פדיון כסף עבור ${childName}: ₪${amount}`, 0); 
+                // UPDATED: Log the negative diff for the child so deleting history refunds them
+                addToHistoryLog(`פדיון כסף עבור ${childName}: ₪${amount}`, 0, cashOutChildId, -pointsToDeduct); 
                 setShowCashOutModal(false);
                 setCashOutChildId(null);
             };
@@ -1236,7 +1302,7 @@
                     </div></main>
                     {selectedChild && <TaskModal child={selectedChild} tasks={getChildTasks(selectedChild.id)} completedTasks={completedTasks} visuals={getChildVisuals(selectedChild.id)} onToggleTask={handleTaskToggle} onClose={() => setSelectedChild(null)} onAddTask={handleAddTask} onDeleteTask={handleDeleteTask} onEditTask={handleEditTask} onMoveTask={handleMoveTask} getTodayKey={getTodayKey} />}
                     {editingChildId && <EditChildModal childId={editingChildId} initialSettings={getChildVisuals(editingChildId)} currentSettings={childSettings[editingChildId] || {}} onClose={() => setEditingChildId(null)} onSave={handleSaveSettings} onDelete={handleDeleteChild} childName={childrenList.find(c => c.id === editingChildId)?.name} />}
-                    {showFamilyEditModal && <EditFamilyModal initialSettings={getFamilyVisuals()} currentSettings={familySettings} onClose={() => setShowFamilyEditModal(false)} onSave={handleSaveFamilySettings} />}
+                    {showFamilyEditModal && <EditFamilyModal initialSettings={getFamilyVisuals()} currentSettings={familySettings} childrenList={childrenList} onClose={() => setShowFamilyEditModal(false)} onSave={handleSaveFamilySettings} />}
                     {showBonusModal && <BonusModal onClose={() => setShowBonusModal(false)} onConfirm={handleBonusPoint} childrenData={childrenList} childSettings={childSettings} />}
                     {showWinModal && (<div className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-black/60 backdrop-blur-md animate-fade-in"><div className="bg-white w-full max-w-lg rounded-[2.5rem] shadow-2xl p-8 text-center animate-scale-up border-8 border-yellow-300 relative overflow-hidden"><div className="absolute top-0 left-0 w-full h-32 bg-yellow-100 rounded-b-[50%] -translate-y-16"></div><div className="relative z-10"><div className="mx-auto w-32 h-32 bg-gradient-to-b from-yellow-300 to-yellow-500 rounded-full flex items-center justify-center mb-6 shadow-xl border-4 border-white animate-bounce"><Icons.Trophy className="w-16 h-16 text-white drop-shadow-md" /></div><h2 className="text-5xl font-black text-slate-800 mb-2 tracking-tight">כל הכבוד!</h2><h3 className="text-2xl font-bold text-slate-600 mb-6">הגעתם ליעד של {targetPoints} נקודות!</h3><div className="p-4 bg-yellow-50 rounded-2xl mb-8 border-2 border-yellow-200"><p className="text-yellow-800 text-lg">"יגעת ומצאת תאמין!"</p><p className="text-yellow-700 font-bold mt-1">המשיכו כך!</p></div><button onClick={handleResetPoints} className="w-full py-4 rounded-2xl bg-gradient-to-r from-blue-500 to-blue-600 text-white font-bold text-xl shadow-xl hover:shadow-2xl hover:scale-[1.02] transition-all flex items-center justify-center gap-2 group"><Icons.RotateCcw className="w-6 h-6 group-hover:rotate-180 transition-transform duration-500" />אפס נקודות והתחל מחדש</button></div></div></div>)}
                     
