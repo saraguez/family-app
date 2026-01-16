@@ -5,10 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>המבצע המשפחתי</title>
     
-    <!-- ERROR HANDLER -->
     <script>
         window.onerror = function(msg, url, lineNo, columnNo, error) {
-            // Ignore benign resize observer errors
             if (msg.includes("ResizeObserver loop")) return true;
 
             const container = document.getElementById('root') || document.body;
@@ -32,7 +30,6 @@
     <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 
-    <!-- Firebase SDKs -->
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
@@ -78,11 +75,12 @@
         
         const appId = typeof __app_id !== 'undefined' ? __app_id : 'family-tasks-default';
 
-        // --- HELPER FOR DB PATH ---
+        // --- 🟢 UPDATED: HELPER FOR DB PATH (SAFE FOLDER) ---
         const getUserDoc = (uid) => {
-    // We use a unique collection name so App 1 never touches this data
-    return db.collection('family_app_safe_v1').doc(uid);
-};
+            // We use a unique collection name so App 1 never touches this data
+            return db.collection('family_app_safe_v1').doc(uid);
+        };
+
         const handleFirestoreError = (error) => {
             console.error("Firestore Operation Error:", error);
             if (error.code === 'permission-denied') {
@@ -778,9 +776,67 @@
             );
         };
 
+        // --- 🟢 NEW: BACKUP MODAL COMPONENT ---
+        const BackupModal = ({ onClose, onImport, onExport }) => {
+            const fileInputRef = useRef(null);
+
+            const handleFileChange = (e) => {
+                const file = e.target.files[0];
+                if (file) {
+                    const reader = new FileReader();
+                    reader.onload = (event) => {
+                        try {
+                            const data = JSON.parse(event.target.result);
+                            if (confirm("שחזור הגיבוי יחליף את כל הנתונים הקיימים. האם להמשיך?")) {
+                                onImport(data);
+                            }
+                        } catch (err) {
+                            alert("שגיאה בקריאת הקובץ. ודא שזהו קובץ גיבוי תקין.");
+                        }
+                    };
+                    reader.readAsText(file);
+                }
+            };
+
+            return (
+                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-fade-in">
+                    <div className="bg-white w-full max-w-sm rounded-3xl shadow-2xl p-6 text-center">
+                        <div className="mx-auto w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mb-4">
+                            <Icons.Save className="w-8 h-8 text-blue-600" />
+                        </div>
+                        <h3 className="text-xl font-bold text-slate-800 mb-2">ניהול גיבויים</h3>
+                        <p className="text-slate-500 text-sm mb-6">שמור את הנתונים במחשב או שחזר מגיבוי קיים</p>
+
+                        <div className="space-y-3">
+                            <button onClick={onExport} className="w-full py-4 rounded-xl bg-blue-50 border-2 border-blue-100 text-blue-700 font-bold hover:bg-blue-100 flex items-center justify-center gap-2 transition-all">
+                                <Icons.ArrowDown className="w-5 h-5" />
+                                הורד קובץ גיבוי למחשב
+                            </button>
+                            
+                            <div className="relative">
+                                <input 
+                                    type="file" 
+                                    accept=".json" 
+                                    ref={fileInputRef}
+                                    onChange={handleFileChange}
+                                    className="hidden" 
+                                />
+                                <button onClick={() => fileInputRef.current.click()} className="w-full py-4 rounded-xl bg-slate-50 border-2 border-slate-100 text-slate-700 font-bold hover:bg-slate-100 flex items-center justify-center gap-2 transition-all">
+                                    <Icons.ArrowUp className="w-5 h-5" />
+                                    שחזר מגיבוי קיים
+                                </button>
+                            </div>
+                        </div>
+
+                        <button onClick={onClose} className="mt-6 text-slate-400 font-medium hover:text-slate-600">סגור</button>
+                    </div>
+                </div>
+            );
+        };
+
         const App = () => {
             const [user, setUser] = useState(null);
-            const [isLoading, setIsLoading] = useState(true); // Loading state
+            const [isLoading, setIsLoading] = useState(true);
             const [points, setPoints] = useState(0);
             const [completedTasks, setCompletedTasks] = useState({});
             const [childSettings, setChildSettings] = useState({});
@@ -800,6 +856,9 @@
             const [showCashOutModal, setShowCashOutModal] = useState(false);
             const [showAddChildModal, setShowAddChildModal] = useState(false);
             const [cashOutChildId, setCashOutChildId] = useState(null);
+            
+            // 🟢 NEW: State for Backup Modal
+            const [showBackupModal, setShowBackupModal] = useState(false);
 
             const [pendingAction, setPendingAction] = useState(null);
             const [animationClass, setAnimationClass] = useState('');
@@ -827,7 +886,6 @@
             // --- AUTH & DATA LOADING ---
             useEffect(() => {
                 const initAuth = async () => {
-                    // Try to use the Canvas custom token if available (for instant login without popups)
                     if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
                         try {
                             await auth.signInWithCustomToken(__initial_auth_token);
@@ -836,7 +894,6 @@
                             await auth.signInAnonymously();
                         }
                     } else {
-                        // Don't auto-login anonymously to allow Google Login button to show
                         // await auth.signInAnonymously(); 
                     }
                 };
@@ -848,10 +905,9 @@
                     setIsLoading(false);
                     
                     if (currentUser) {
-                        // Use a safe path structure: artifacts/{appId}/users/{uid}
+                        // 🟢 NEW PATH USED HERE AUTOMATICALLY VIA getUserDoc()
                         const docRef = getUserDoc(currentUser.uid);
                         
-                        // Real-time listener
                         const unsubscribeDoc = docRef.onSnapshot((docSnap) => {
                             if (docSnap.exists) {
                                 const data = docSnap.data();
@@ -864,7 +920,6 @@
                                 setChildScores(data.childScores || {});
                                 if (data.childrenList) setChildrenList(data.childrenList);
                             } else {
-                                // Initialize new user data with merge:true just in case
                                 docRef.set({ 
                                     points: 0, 
                                     completedTasks: {}, 
@@ -890,6 +945,67 @@
                 if (points >= targetPoints && points > 0) setShowWinModal(true);
             }, [points, targetPoints]);
 
+            // 🟢 NEW: EXPORT BACKUP
+            const handleExportBackup = () => {
+                const backupData = {
+                    childrenList,
+                    childSettings,
+                    familySettings,
+                    tasksData,
+                    childScores,
+                    points,
+                    completedTasks,
+                    history,
+                    backupDate: new Date().toISOString(),
+                    appVersion: "v1_safe"
+                };
+                
+                const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(backupData));
+                const downloadAnchorNode = document.createElement('a');
+                downloadAnchorNode.setAttribute("href", dataStr);
+                downloadAnchorNode.setAttribute("download", "family_tasks_backup_" + new Date().toISOString().slice(0,10) + ".json");
+                document.body.appendChild(downloadAnchorNode);
+                downloadAnchorNode.click();
+                downloadAnchorNode.remove();
+                setShowBackupModal(false);
+            };
+
+            // 🟢 NEW: IMPORT BACKUP
+            const handleImportBackup = async (data) => {
+                if (!user) return;
+                const docRef = getUserDoc(user.uid);
+                
+                try {
+                    // Update all state variables locally first for instant feedback
+                    if (data.childrenList) setChildrenList(data.childrenList);
+                    if (data.childSettings) setChildSettings(data.childSettings);
+                    if (data.familySettings) setFamilySettings(data.familySettings);
+                    if (data.tasksData) setTasksData(data.tasksData);
+                    if (data.childScores) setChildScores(data.childScores);
+                    if (data.points !== undefined) setPoints(data.points);
+                    if (data.completedTasks) setCompletedTasks(data.completedTasks);
+                    if (data.history) setHistory(data.history);
+
+                    // Save to Firestore
+                    await docRef.set({
+                        childrenList: data.childrenList || [],
+                        childSettings: data.childSettings || {},
+                        familySettings: data.familySettings || {},
+                        childTasks: data.tasksData || {}, 
+                        childScores: data.childScores || {},
+                        points: data.points || 0,
+                        completedTasks: data.completedTasks || {},
+                        history: data.history || []
+                    }, { merge: true });
+
+                    alert("השחזור הושלם בהצלחה!");
+                    setShowBackupModal(false);
+                } catch (e) {
+                    console.error("Restore error", e);
+                    alert("שגיאה בשחזור הנתונים ל-Firebase");
+                }
+            };
+
             const getTodayKey = () => { const d = new Date(); return `${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}`; };
             const getChildVisuals = (childId) => {
                 const childDefault = childrenList.find(c => c.id === childId) || CHILDREN_DEFAULTS.find(c => c.id === childId);
@@ -899,7 +1015,6 @@
                 const themeId = settings.themeId || childDefault.defaultThemeId;
                 const theme = THEMES.find(t => t.id === themeId) || THEMES[0];
                 const useImage = settings.useImage; const image = settings.image; const useEmoji = settings.useEmoji; const emoji = settings.emoji || '😊'; 
-                // Fix: use childDefault instead of child
                 const iconKey = settings.iconKey || childDefault.defaultIconKey; 
                 const IconComponent = ICON_MAP[iconKey] || Icons.Smile;
                 const name = settings.name || childDefault.name;
@@ -922,27 +1037,15 @@
                 return { theme, IconComponent, useEmoji, emoji, useImage, image, title };
             };
 
-            // --- ACTIONS ---
             const verifyParentAuth = (callback) => {
                 if (!parentPin) { callback(); } else { setPendingAction(() => callback); setShowPinModal(true); }
             };
             const handlePinSuccess = () => { setShowPinModal(false); if (pendingAction) { pendingAction(); setPendingAction(null); } };
 
-            // UPDATED: addToHistoryLog now accepts childId and explicit childDiff
             const addToHistoryLog = async (text, pointsDiff, childId = null, childPointsDiff = null) => {
                 if (!user) return;
-                
-                // If childPointsDiff is not passed, default to pointsDiff (common for tasks/bonuses)
                 const actualChildDiff = childPointsDiff !== null ? childPointsDiff : (childId ? pointsDiff : 0);
-
-                const newEntry = { 
-                    text, 
-                    diff: pointsDiff, 
-                    childId, 
-                    childDiff: actualChildDiff, 
-                    timestamp: Date.now() 
-                };
-                
+                const newEntry = { text, diff: pointsDiff, childId, childDiff: actualChildDiff, timestamp: Date.now() };
                 const updatedHistory = [newEntry, ...history].slice(0, 50);
                 const docRef = getUserDoc(user.uid);
                 await docRef.update({ history: updatedHistory }).catch(handleFirestoreError);
@@ -955,17 +1058,13 @@
                     const newHistory = [...history];
                     newHistory.splice(index, 1);
                     const docRef = getUserDoc(user.uid);
-
                     const updates = { 
                         history: newHistory,
                         points: firebase.firestore.FieldValue.increment(-item.diff)
                     };
-
-                    // UPDATED: If the history item belongs to a specific child, revert their score too
                     if (item.childId && item.childDiff) {
                         updates[`childScores.${item.childId}`] = firebase.firestore.FieldValue.increment(-item.childDiff);
                     }
-
                     await docRef.update(updates).catch(handleFirestoreError);
                 });
             };
@@ -984,13 +1083,11 @@
                 const childName = getChildVisuals(childId).name;
                 
                 const updates = {};
-                
                 if (isAlreadyDone) {
                     updates.points = firebase.firestore.FieldValue.increment(-1);
                     updates[`completedTasks.${taskKey}`] = false;
                     updates[`childScores.${childId}`] = firebase.firestore.FieldValue.increment(-1);
                     await docRef.update(updates).catch(handleFirestoreError);
-                    // UPDATED: Pass childId to log
                     addToHistoryLog(`ביטול: ${taskText || 'משימה'} (${childName})`, -1, childId);
                 } else {
                     playSuccessSound(); triggerConfetti();
@@ -998,7 +1095,6 @@
                     updates[`completedTasks.${taskKey}`] = true;
                     updates[`childScores.${childId}`] = firebase.firestore.FieldValue.increment(1);
                     await docRef.update(updates).catch(handleFirestoreError);
-                    // UPDATED: Pass childId to log
                     addToHistoryLog(`משימה: ${taskText || 'משימה'} (${childName})`, 1, childId);
                 }
             };
@@ -1021,14 +1117,7 @@
                     if (!user) return;
                     const docRef = getUserDoc(user.uid);
                     const currentTasks = tasksData[childId] || (childrenList.find(c => c.id === childId)?.initialTasks || []);
-                    const updatedTasks = currentTasks.map(t => 
-                        t.id === taskId ? { 
-                            ...t, 
-                            text: newText, 
-                            type: newType,
-                            date: newType === 'one-time' ? getTodayKey() : t.date 
-                        } : t
-                    );
+                    const updatedTasks = currentTasks.map(t => t.id === taskId ? { ...t, text: newText, type: newType, date: newType === 'one-time' ? getTodayKey() : t.date } : t);
                     await docRef.update({ [`childTasks.${childId}`]: updatedTasks }).catch(handleFirestoreError);
                 });
             };
@@ -1068,7 +1157,6 @@
                     logMessage = `בונוס ל${childName}`;
                 }
                 await docRef.update(updates).catch(handleFirestoreError);
-                // UPDATED: Pass childId to log
                 addToHistoryLog(logMessage, amount, childId);
                 setShowBonusModal(false);
             };
@@ -1077,29 +1165,18 @@
                 if (!user) return;
                 const docRef = getUserDoc(user.uid);
                 try {
-                    await docRef.set({ 
-                        childSettings: {
-                            [childId]: newSettings 
-                        }
-                    }, { merge: true });
+                    await docRef.set({ childSettings: { [childId]: newSettings } }, { merge: true });
                     setEditingChildId(null);
-                } catch (error) {
-                    handleFirestoreError(error);
-                }
+                } catch (error) { handleFirestoreError(error); }
             };
 
             const handleSaveFamilySettings = async (newSettings, newChildrenList) => {
                 if (!user) return;
                 const docRef = getUserDoc(user.uid);
                 try {
-                    await docRef.set({ 
-                        familySettings: newSettings,
-                        childrenList: newChildrenList
-                    }, { merge: true });
+                    await docRef.set({ familySettings: newSettings, childrenList: newChildrenList }, { merge: true });
                     setShowFamilyEditModal(false);
-                } catch (error) {
-                    handleFirestoreError(error);
-                }
+                } catch (error) { handleFirestoreError(error); }
             };
 
             const handleResetPoints = async () => {
@@ -1118,7 +1195,6 @@
                 const docRef = getUserDoc(user.uid);
                 const childName = getChildVisuals(cashOutChildId).name;
                 await docRef.update({ [`childScores.${cashOutChildId}`]: firebase.firestore.FieldValue.increment(-pointsToDeduct) }).catch(handleFirestoreError);
-                // UPDATED: Log the negative diff for the child so deleting history refunds them
                 addToHistoryLog(`פדיון כסף עבור ${childName}: ₪${amount}`, 0, cashOutChildId, -pointsToDeduct); 
                 setShowCashOutModal(false);
                 setCashOutChildId(null);
@@ -1144,18 +1220,13 @@
                 verifyParentAuth(async () => {
                     if (!user) return;
                     const docRef = getUserDoc(user.uid);
-                    
-                    // Filter out the deleted child
                     const updatedList = childrenList.filter(c => c.id !== childId);
-                    
-                    // Prepare updates (remove child from list, and delete their specific data fields)
                     const updates = {
                         childrenList: updatedList,
                         [`childSettings.${childId}`]: firebase.firestore.FieldValue.delete(),
                         [`childTasks.${childId}`]: firebase.firestore.FieldValue.delete(),
                         [`childScores.${childId}`]: firebase.firestore.FieldValue.delete()
                     };
-
                     await docRef.update(updates).catch(handleFirestoreError);
                     setEditingChildId(null);
                 });
@@ -1165,7 +1236,7 @@
                 if (confirm("האם להתנתק ולהחליף משתמש?")) {
                     auth.signOut().then(() => {
                         setUser(null);
-                        window.location.reload(); // Force reload to ensure clean state for next login
+                        window.location.reload(); 
                     });
                 }
             };
@@ -1178,19 +1249,15 @@
                 onTouchEnd: (e) => { if (longPressTimer.current) clearTimeout(longPressTimer.current); if (isLongPress.current) e.preventDefault(); if (!isLongPress.current && onClick) onClick(e); }
             });
 
-            // Weekly Chart Logic
             const weeklyChartData = useMemo(() => {
                 if (!history.length) return [];
                 const days = {};
-                // Get last 7 days
                 for (let i = 6; i >= 0; i--) {
                     const d = new Date();
                     d.setDate(d.getDate() - i);
-                    const key = d.toLocaleDateString('he-IL'); // Key for display
+                    const key = d.toLocaleDateString('he-IL'); 
                     days[key] = { date: key, points: 0, dayName: d.toLocaleDateString('he-IL', {weekday: 'short'}) };
                 }
-                
-                // Aggregate points
                 history.forEach(item => {
                     const itemDate = new Date(item.timestamp).toLocaleDateString('he-IL');
                     if (days[itemDate] && item.diff > 0) {
@@ -1230,6 +1297,10 @@
                                 <div className="flex flex-col items-end">
                                     <div className="flex gap-2">
                                         <button onClick={() => verifyParentAuth(() => setShowFamilyEditModal(true))} className="p-2 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 transition-colors" title="הגדרות הורים"><Icons.Settings className="w-6 h-6" /></button>
+                                        
+                                        {/* 🟢 NEW: BACKUP BUTTON */}
+                                        <button onClick={() => verifyParentAuth(() => setShowBackupModal(true))} className="p-2 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 transition-colors" title="גיבוי ושחזור"><Icons.Save className="w-6 h-6" /></button>
+
                                         <button onClick={() => setShowHistoryModal(true)} className="p-2 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 transition-colors" title="היסטוריה"><Icons.BarChart className="w-6 h-6" /></button>
                                         <button onClick={handleLogout} className="p-2 rounded-full bg-slate-100 hover:bg-red-100 text-slate-500 hover:text-red-500 transition-colors" title="החלף משתמש"><Icons.LogOut className="w-6 h-6" /></button>
                                     </div>
@@ -1280,22 +1351,22 @@
                                     <button onClick={(e) => { e.stopPropagation(); setCashOutChildId(child.id); verifyParentAuth(() => setShowCashOutModal(true)); }} className="absolute top-0 left-9 -mt-3 ml-1 bg-gradient-to-br from-green-400 to-emerald-600 text-white w-12 h-8 flex items-center justify-center rounded-full shadow-lg font-bold border-2 border-white z-20 gap-0.5 text-sm hover:scale-110 transition-transform">₪{money}</button>
 
                                     <div className="flex flex-col items-center justify-center w-full h-full cursor-pointer mt-2">
-                                        <div className={`w-20 h-20 rounded-full ${theme.iconBg} flex items-center justify-center shadow-inner group-hover:scale-110 transition-transform overflow-hidden relative border-4 border-white`}>{useImage && image ? <img src={image} alt={name} className="w-full h-full object-cover" /> : useEmoji ? <span className="text-4xl leading-none select-none">{emoji}</span> : <IconComponent className={`w-10 h-10 ${theme.iconText}`} />}</div>
-                                        <h2 className="text-2xl font-bold text-center mt-3" title="לחיצה ארוכה לעריכת שם">{name}</h2>
-                                        
-                                        {/* Visual Progress Bar */}
-                                        <div className="w-full mt-3 px-4">
-                                            <div className="flex justify-between text-xs text-slate-400 font-bold mb-1">
-                                                <span>הושלם</span>
-                                                <span>{completedCount}/{totalCount}</span>
+                                            <div className={`w-20 h-20 rounded-full ${theme.iconBg} flex items-center justify-center shadow-inner group-hover:scale-110 transition-transform overflow-hidden relative border-4 border-white`}>{useImage && image ? <img src={image} alt={name} className="w-full h-full object-cover" /> : useEmoji ? <span className="text-4xl leading-none select-none">{emoji}</span> : <IconComponent className={`w-10 h-10 ${theme.iconText}`} />}</div>
+                                            <h2 className="text-2xl font-bold text-center mt-3" title="לחיצה ארוכה לעריכת שם">{name}</h2>
+                                            
+                                            {/* Visual Progress Bar */}
+                                            <div className="w-full mt-3 px-4">
+                                                <div className="flex justify-between text-xs text-slate-400 font-bold mb-1">
+                                                    <span>הושלם</span>
+                                                    <span>{completedCount}/{totalCount}</span>
+                                                </div>
+                                                <div className="h-3 w-full bg-slate-100 rounded-full overflow-hidden">
+                                                    <div 
+                                                        className={`h-full transition-all duration-500 ease-out rounded-full ${childProgress === 100 ? 'bg-green-500' : 'bg-blue-500'}`} 
+                                                        style={{ width: `${childProgress}%` }}
+                                                    />
+                                                </div>
                                             </div>
-                                            <div className="h-3 w-full bg-slate-100 rounded-full overflow-hidden">
-                                                <div 
-                                                    className={`h-full transition-all duration-500 ease-out rounded-full ${childProgress === 100 ? 'bg-green-500' : 'bg-blue-500'}`} 
-                                                    style={{ width: `${childProgress}%` }}
-                                                />
-                                            </div>
-                                        </div>
                                     </div>
                                     <div className="absolute top-4 left-4 bg-slate-100 rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none"><Icons.Plus className="w-5 h-5 text-slate-400" /></div>
                                 </div>
@@ -1362,6 +1433,9 @@
                             </div>
                         </div>
                     )}
+
+                    {/* 🟢 NEW: RENDER BACKUP MODAL */}
+                    {showBackupModal && <BackupModal onClose={() => setShowBackupModal(false)} onExport={handleExportBackup} onImport={handleImportBackup} />}
 
                     {showPinModal && <PinModal onClose={() => setShowPinModal(false)} onSuccess={handlePinSuccess} correctPin={parentPin} />}
                     {showCashOutModal && <CashOutModal onClose={() => setShowCashOutModal(false)} onConfirm={handleCashOut} currentBalance={Math.floor((childScores[cashOutChildId] || 0) / 5)} childName={getChildVisuals(cashOutChildId).name} />}
