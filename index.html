@@ -80,10 +80,9 @@
 
         // --- HELPER FOR DB PATH ---
         const getUserDoc = (uid) => {
-            // Reverted path to ensure previous data is accessible
-            return db.collection('artifacts').doc(appId).collection('users').doc(uid);
-        };
-
+    // We use a unique collection name so App 1 never touches this data
+    return db.collection('family_app_safe_v1').doc(uid);
+};
         const handleFirestoreError = (error) => {
             console.error("Firestore Operation Error:", error);
             if (error.code === 'permission-denied') {
