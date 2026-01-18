@@ -75,10 +75,10 @@
         
         const appId = typeof __app_id !== 'undefined' ? __app_id : 'family-tasks-default';
 
-        // --- 🟢 UPDATED: HELPER FOR DB PATH (SAFE FOLDER) ---
+        // --- HELPER FOR DB PATH (SAFE FOLDER) ---
         const getUserDoc = (uid) => {
-            // We use a unique collection name so App 1 never touches this data
-            return db.collection('family_app_safe_v1').doc(uid);
+            // FIX: Using correct path structure for permissions: /artifacts/{appId}/users/{userId}/data/main
+            return db.collection('artifacts').doc(appId).collection('users').doc(uid).collection('data').doc('main');
         };
 
         const handleFirestoreError = (error) => {
@@ -652,7 +652,7 @@
             );
         };
 
-        const EditFamilyModal = ({ initialSettings, currentSettings, childrenList, onClose, onSave }) => {
+        const EditFamilyModal = ({ initialSettings, currentSettings, childrenList, childSettings, onClose, onSave, onAddChild }) => {
             const getInitialTab = () => { if (currentSettings.useImage) return 'image'; if (currentSettings.useEmoji) return 'emoji'; return 'icon'; };
             const [activeTab, setActiveTab] = useState(getInitialTab());
             const [selectedThemeId, setSelectedThemeId] = useState(currentSettings.themeId || initialSettings.theme.id);
@@ -695,14 +695,14 @@
                     title: customTitle,
                     targetPoints: Number(customTarget),
                     pointsPerShekel: Number(customPointsPerShekel),
-                    parentPin: customPin // Save PIN
+                    parentPin: customPin 
                 }, localChildren);
             };
 
             return (
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-fade-in">
                 <div className="bg-white w-full max-w-lg rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
-                    <div className="p-6 border-b border-slate-100 flex justify-between items-center bg-slate-50"><h3 className="text-xl font-bold text-slate-800">עריכת כותרת וסמל</h3><button onClick={onClose} className="p-2 hover:bg-slate-200 rounded-full"><Icons.X className="w-5 h-5" /></button></div>
+                    <div className="p-6 border-b border-slate-100 flex justify-between items-center bg-slate-50"><h3 className="text-xl font-bold text-slate-800">הגדרות משפחה</h3><button onClick={onClose} className="p-2 hover:bg-slate-200 rounded-full"><Icons.X className="w-5 h-5" /></button></div>
                     <div className="p-6 overflow-y-auto flex-1">
                         <div className="mb-6"><h4 className="flex items-center gap-2 font-bold text-slate-700 mb-3"><Icons.Type className="w-5 h-5 text-slate-500" />כותרת האפליקציה</h4><input type="text" value={customTitle} onChange={(e) => setCustomTitle(e.target.value)} className="w-full p-3 rounded-xl border border-slate-300 focus:border-blue-500 focus:ring-4 focus:ring-blue-100 outline-none text-lg" placeholder="הכנס כותרת..." /></div>
                         <div className="mb-6"><h4 className="flex items-center gap-2 font-bold text-slate-700 mb-3"><Icons.Target className="w-5 h-5 text-slate-500" />יעד נקודות</h4><input type="number" value={customTarget} onChange={(e) => setCustomTarget(e.target.value)} className="w-full p-3 rounded-xl border border-slate-300 focus:border-blue-500 focus:ring-4 focus:ring-blue-100 outline-none text-lg" placeholder="100" min="1" /></div>
@@ -710,29 +710,35 @@
                         <div className="mb-6"><h4 className="flex items-center gap-2 font-bold text-slate-700 mb-3"><Icons.Lock className="w-5 h-5 text-slate-500" />קוד הורים (אופציונלי)</h4><input type="text" maxLength="4" value={customPin} onChange={(e) => setCustomPin(e.target.value.replace(/\D/g, ''))} className="w-full p-3 rounded-xl border border-slate-300 focus:border-blue-500 focus:ring-4 focus:ring-blue-100 outline-none text-lg tracking-widest text-center" placeholder="הגדר קוד (4 ספרות)" /><p className="text-xs text-slate-400 mt-1">השאר ריק כדי לבטל נעילה</p></div>
                         
                         <div className="mb-8">
-                            <h4 className="flex items-center gap-2 font-bold text-slate-700 mb-3"><Icons.Repeat className="w-5 h-5 text-blue-500" />סדר הילדים</h4>
+                            <div className="flex justify-between items-center mb-3">
+                                <h4 className="flex items-center gap-2 font-bold text-slate-700"><Icons.Repeat className="w-5 h-5 text-blue-500" />סדר הילדים</h4>
+                                <button onClick={onAddChild} className="text-sm font-bold text-blue-600 bg-blue-50 px-3 py-1 rounded-lg hover:bg-blue-100 border border-blue-200 transition-colors">+ הוסף ילד</button>
+                            </div>
                             <div className="space-y-2">
-                                {localChildren.map((child, index) => (
-                                    <div key={child.id} className="flex items-center justify-between p-3 bg-slate-50 rounded-xl border border-slate-200">
-                                        <span className="font-bold text-slate-700">{child.name}</span>
-                                        <div className="flex gap-1">
-                                            <button 
-                                                onClick={() => handleMoveChild(index, 'up')} 
-                                                disabled={index === 0}
-                                                className={`p-1.5 rounded-lg ${index === 0 ? 'text-slate-300' : 'text-blue-600 hover:bg-blue-100'}`}
-                                            >
-                                                <Icons.ArrowUp className="w-4 h-4" />
-                                            </button>
-                                            <button 
-                                                onClick={() => handleMoveChild(index, 'down')} 
-                                                disabled={index === localChildren.length - 1}
-                                                className={`p-1.5 rounded-lg ${index === localChildren.length - 1 ? 'text-slate-300' : 'text-blue-600 hover:bg-blue-100'}`}
-                                            >
-                                                <Icons.ArrowDown className="w-4 h-4" />
-                                            </button>
+                                {localChildren.map((child, index) => {
+                                    const displayName = childSettings && childSettings[child.id]?.name ? childSettings[child.id].name : child.name;
+                                    return (
+                                        <div key={child.id} className="flex items-center justify-between p-3 bg-slate-50 rounded-xl border border-slate-200">
+                                            <span className="font-bold text-slate-700">{displayName}</span>
+                                            <div className="flex gap-1">
+                                                <button 
+                                                    onClick={() => handleMoveChild(index, 'up')} 
+                                                    disabled={index === 0}
+                                                    className={`p-1.5 rounded-lg ${index === 0 ? 'text-slate-300' : 'text-blue-600 hover:bg-blue-100'}`}
+                                                >
+                                                    <Icons.ArrowUp className="w-4 h-4" />
+                                                </button>
+                                                <button 
+                                                    onClick={() => handleMoveChild(index, 'down')} 
+                                                    disabled={index === localChildren.length - 1}
+                                                    className={`p-1.5 rounded-lg ${index === localChildren.length - 1 ? 'text-slate-300' : 'text-blue-600 hover:bg-blue-100'}`}
+                                                >
+                                                    <Icons.ArrowDown className="w-4 h-4" />
+                                                </button>
+                                            </div>
                                         </div>
-                                    </div>
-                                ))}
+                                    );
+                                })}
                             </div>
                         </div>
 
@@ -1372,17 +1378,13 @@
                                 </div>
                             );
                         })}
-                        {/* ADD CHILD CARD */}
-                        <button onClick={() => verifyParentAuth(() => setShowAddChildModal(true))} className="group relative bg-slate-50 border-4 border-dashed border-slate-300 rounded-3xl p-6 shadow-sm hover:shadow-lg hover:border-slate-400 hover:-translate-y-2 transition-all duration-300 flex flex-col items-center justify-center gap-4 h-64">
-                            <div className="w-20 h-20 rounded-full bg-slate-200 flex items-center justify-center text-slate-400 group-hover:bg-slate-300 group-hover:text-slate-600 transition-colors">
-                                <Icons.UserPlus className="w-10 h-10" />
-                            </div>
-                            <h2 className="text-xl font-bold text-slate-400 group-hover:text-slate-600">הוסף ילד</h2>
-                        </button>
                     </div></main>
                     {selectedChild && <TaskModal child={selectedChild} tasks={getChildTasks(selectedChild.id)} completedTasks={completedTasks} visuals={getChildVisuals(selectedChild.id)} onToggleTask={handleTaskToggle} onClose={() => setSelectedChild(null)} onAddTask={handleAddTask} onDeleteTask={handleDeleteTask} onEditTask={handleEditTask} onMoveTask={handleMoveTask} getTodayKey={getTodayKey} />}
                     {editingChildId && <EditChildModal childId={editingChildId} initialSettings={getChildVisuals(editingChildId)} currentSettings={childSettings[editingChildId] || {}} onClose={() => setEditingChildId(null)} onSave={handleSaveSettings} onDelete={handleDeleteChild} childName={childrenList.find(c => c.id === editingChildId)?.name} />}
-                    {showFamilyEditModal && <EditFamilyModal initialSettings={getFamilyVisuals()} currentSettings={familySettings} childrenList={childrenList} onClose={() => setShowFamilyEditModal(false)} onSave={handleSaveFamilySettings} />}
+                    
+                    {/* UPDATED EDIT FAMILY MODAL WITH ADD CHILD HANDLER */}
+                    {showFamilyEditModal && <EditFamilyModal initialSettings={getFamilyVisuals()} currentSettings={familySettings} childrenList={childrenList} childSettings={childSettings} onClose={() => setShowFamilyEditModal(false)} onSave={handleSaveFamilySettings} onAddChild={() => { setShowFamilyEditModal(false); setShowAddChildModal(true); }} />}
+                    
                     {showBonusModal && <BonusModal onClose={() => setShowBonusModal(false)} onConfirm={handleBonusPoint} childrenData={childrenList} childSettings={childSettings} />}
                     {showWinModal && (<div className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-black/60 backdrop-blur-md animate-fade-in"><div className="bg-white w-full max-w-lg rounded-[2.5rem] shadow-2xl p-8 text-center animate-scale-up border-8 border-yellow-300 relative overflow-hidden"><div className="absolute top-0 left-0 w-full h-32 bg-yellow-100 rounded-b-[50%] -translate-y-16"></div><div className="relative z-10"><div className="mx-auto w-32 h-32 bg-gradient-to-b from-yellow-300 to-yellow-500 rounded-full flex items-center justify-center mb-6 shadow-xl border-4 border-white animate-bounce"><Icons.Trophy className="w-16 h-16 text-white drop-shadow-md" /></div><h2 className="text-5xl font-black text-slate-800 mb-2 tracking-tight">כל הכבוד!</h2><h3 className="text-2xl font-bold text-slate-600 mb-6">הגעתם ליעד של {targetPoints} נקודות!</h3><div className="p-4 bg-yellow-50 rounded-2xl mb-8 border-2 border-yellow-200"><p className="text-yellow-800 text-lg">"יגעת ומצאת תאמין!"</p><p className="text-yellow-700 font-bold mt-1">המשיכו כך!</p></div><button onClick={handleResetPoints} className="w-full py-4 rounded-2xl bg-gradient-to-r from-blue-500 to-blue-600 text-white font-bold text-xl shadow-xl hover:shadow-2xl hover:scale-[1.02] transition-all flex items-center justify-center gap-2 group"><Icons.RotateCcw className="w-6 h-6 group-hover:rotate-180 transition-transform duration-500" />אפס נקודות והתחל מחדש</button></div></div></div>)}
                     
